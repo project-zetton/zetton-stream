@@ -31,7 +31,7 @@ inline bool BuildGstPipelineString(const StreamUri& uri, StreamOptions& options,
     } else if (uri.extension == "avi") {
       ss << "avidemux ! ";
     } else if (uri.extension != "h264" && uri.extension != "h265") {
-      ROS_ERROR("Unsupported video file extension (%s)", uri.extension.c_str());
+      AERROR_F("Unsupported video file extension ({})", uri.extension);
       return false;
     }
     // parser
@@ -50,7 +50,7 @@ inline bool BuildGstPipelineString(const StreamUri& uri, StreamOptions& options,
     options.device_type = StreamDeviceType::DEVICE_IP;
     // check port number
     if (uri.port <= 0) {
-      ROS_ERROR("Invalid RTP port (%i)", uri.port);
+      AERROR_F("Invalid RTP port ({})", uri.port);
       return false;
     }
     // source
@@ -99,8 +99,8 @@ inline bool BuildGstPipelineString(const StreamUri& uri, StreamOptions& options,
       ss << "rtpjpegdepay ! ";
     }
   } else {
-    ROS_ERROR("Unsupported protocol (%s)",
-              StreamProtocolTypeToStr(uri.protocol));
+    AERROR_F("Unsupported protocol ({})",
+             StreamProtocolTypeToStr(uri.protocol));
     return false;
   }
 
@@ -122,7 +122,7 @@ inline bool BuildGstPipelineString(const StreamUri& uri, StreamOptions& options,
     } else if (options.codec == StreamCodec::CODEC_MJPEG) {
       ss << "avdec_mjpeg ! ";
     } else {
-      ROS_ERROR("Unsupported codec (%s)", StreamCodecToStr(options.codec));
+      AERROR_F("Unsupported codec ({})", StreamCodecToStr(options.codec));
       return false;
     }
   } else if (options.platform == StreamPlatformType::PLATFORM_GPU) {
@@ -135,7 +135,7 @@ inline bool BuildGstPipelineString(const StreamUri& uri, StreamOptions& options,
       // FIXME gldownload doesn't work on headless mode
       ss << "nvdec ! gldownload ! ";
     } else {
-      ROS_ERROR("Unsupported codec (%s)", StreamCodecToStr(options.codec));
+      AERROR_F("Unsupported codec ({})", StreamCodecToStr(options.codec));
       return false;
     }
   } else if (options.platform == StreamPlatformType::PLATFORM_JETSON) {
@@ -155,7 +155,7 @@ inline bool BuildGstPipelineString(const StreamUri& uri, StreamOptions& options,
     } else if (options.codec == StreamCodec::CODEC_MJPEG) {
       ss << "nvjpegdec ! ";
     } else {
-      ROS_ERROR("Unsupported codec (%s)", StreamCodecToStr(options.codec));
+      AERROR_F("Unsupported codec ({})", StreamCodecToStr(options.codec));
       return false;
     }
   }
@@ -209,7 +209,7 @@ inline bool BuildGstPipelineString(const StreamUri& uri, StreamOptions& options,
   }
 
   pipeline_string = ss.str();
-  ROS_INFO("Built pipeline string: %s", pipeline_string.c_str());
+  AINFO_F("Built pipeline string: {}", pipeline_string);
   return true;
 };
 

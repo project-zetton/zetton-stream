@@ -83,7 +83,7 @@ bool StreamUri::Parse(const char* uri) {
     } else if (string == "display") {
       protocol_string = "display";
     } else {
-      ROS_ERROR("Invalid resource or file path:  %s", string.c_str());
+      AERROR_F("Invalid resource or file path:  {}", string);
       return false;
     }
 
@@ -93,7 +93,8 @@ bool StreamUri::Parse(const char* uri) {
     string = protocol_string + "://";
 
     if (protocol_string == "file")
-      string += common::GetAbsolutePath(location);  // URI paths should be absolute
+      string +=
+          common::GetAbsolutePath(location);  // URI paths should be absolute
     else
       string += location;
   }
@@ -104,17 +105,17 @@ bool StreamUri::Parse(const char* uri) {
   // parse extra info (device ordinals, IP addresses, ect)
   if (protocol_string == "v4l2") {
     if (sscanf(location.c_str(), "/dev/video%i", &port) != 1) {
-      ROS_ERROR("Failed to parse V4L2 device ID from %s", location.c_str());
+      AERROR_F("Failed to parse V4L2 device ID from {}", location);
       return false;
     }
   } else if (protocol_string == "csi") {
     if (sscanf(location.c_str(), "%i", &port) != 1) {
-      ROS_ERROR("Failed to parse MIPI CSI device ID from %s", location.c_str());
+      AERROR_F("Failed to parse MIPI CSI device ID from {}", location);
       return false;
     }
   } else if (protocol_string == "display") {
     if (sscanf(location.c_str(), "%i", &port) != 1) {
-      ROS_INFO("Using default display device 0");
+      AINFO_F("Using default display device 0");
       port = 0;
     }
   } else if (protocol_string == "file") {
@@ -151,11 +152,11 @@ bool StreamUri::Parse(const char* uri) {
       }
       if (sscanf(port_str.c_str(), "%i", &port) != 1) {
         if (protocol_string == "rtsp") {
-          ROS_WARN("Missing/invalid IP port from %s, default to port 554",
-                   string.c_str());
+          AWARN_F("Missing/invalid IP port from {}, default to port 554",
+                  string);
           port = 554;
         } else {
-          ROS_ERROR("Failed to parse IP port from %s", string.c_str());
+          AERROR_F("Failed to parse IP port from {}", string);
           return false;
         }
       }
@@ -173,15 +174,15 @@ bool StreamUri::Parse(const char* uri) {
 void StreamUri::Print(const char* prefix) const {
   if (!prefix) prefix = "";
 
-  ROS_INFO("%s-- URI: %s", prefix, string.c_str());
-  ROS_INFO("%s   - protocol:  %s", prefix, StreamProtocolTypeToStr(protocol));
-  ROS_INFO("%s   - location:  %s", prefix, location.c_str());
+  AINFO_F("{}-- URI: {}", prefix, string);
+  AINFO_F("{}   - protocol:  {}", prefix, StreamProtocolTypeToStr(protocol));
+  AINFO_F("{}   - location:  {}", prefix, location);
   if (extension.size() > 0) {
-    ROS_INFO("%s   - extension: %s\n", prefix, extension.c_str());
+    AINFO_F("%s   - extension: {}\n", prefix, extension);
   }
   if (port > 0) {
-    ROS_INFO("%s   - port:      %i\n", prefix, port);
+    AINFO_F("%s   - port:      {}\n", prefix, port);
   }
 }
-}  // namespace common
+}  // namespace stream
 }  // namespace zetton

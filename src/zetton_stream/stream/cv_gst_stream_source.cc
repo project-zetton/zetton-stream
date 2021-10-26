@@ -16,11 +16,11 @@ bool CvGstStreamSource::Init(const StreamOptions& options) {
   // check that the file exists
   if (options_.resource.protocol == StreamProtocolType::PROTOCOL_FILE) {
     if (!common::FileExists(options_.resource.location)) {
-      ROS_ERROR("File not found: '%s'\n", options_.resource.location.c_str());
+      AERROR_F("File not found: '{}'", options_.resource.location);
       return false;
     }
   }
-  ROS_INFO("Creating decoder for %s", options_.resource.location.c_str());
+  AINFO_F("Creating decoder for {}", options_.resource.location);
 
   // flag if the user wants a specific resolution and framerate
   if (options_.width != 0 || options_.height != 0) {
@@ -32,7 +32,7 @@ bool CvGstStreamSource::Init(const StreamOptions& options) {
 
   // build pipeline string
   if (!BuildPipelineString()) {
-    ROS_ERROR("Failed to build pipeline string");
+    AERROR_F("Failed to build pipeline string");
     return false;
   }
 
@@ -66,7 +66,7 @@ void CvGstStreamSource::CaptureFrames() {
         try {
           callback_(frame);
         } catch (std::exception& e) {
-          ROS_ERROR_STREAM(e.what());
+          AERROR << e.what();
         }
       }
     }

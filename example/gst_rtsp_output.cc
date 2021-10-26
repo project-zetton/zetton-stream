@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
                 cv::Scalar(0, 0, 0), 5);
     // push frame to stream
     if (output->Render(frame)) {
-      ROS_WARN("Send frame: %dx%d", frame.cols, frame.rows);
+      AWARN_F("Send frame: {}x{}", frame.cols, frame.rows);
     }
     usleep(100000);
   }

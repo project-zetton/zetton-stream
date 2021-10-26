@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "zetton_common/util/log.h"
 #include "zetton_stream/stream/cv_gst_stream_source.h"
 #include "zetton_stream/stream/stream_options.h"
@@ -22,7 +24,7 @@ int main(int argc, char** argv) {
   while (true) {
     cv::Mat frame;
     if (source->Capture(frame)) {
-      ROS_WARN("Recv frame: %dx%d", frame.cols, frame.rows);
+      AWARN_F("Recv frame: {}x{}", frame.cols, frame.rows);
     }
     usleep(100000);
   }

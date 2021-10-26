@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>zetton_stream</name>
+    <version>1.0.0</version>
+    <description>Stream-related module for external communication in Project Zetton.</description>
+    <maintainer email="xxdsox@gmail.com">Yusu Pan</maintainer>
+    <license>MIT</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+    <build_depend>roscpp</build_depend>
+    <build_depend>zetton_common</build_depend>
+    <exec_depend>roscpp</exec_depend>
+    <exec_depend>zetton_common</exec_depend>
+</package>

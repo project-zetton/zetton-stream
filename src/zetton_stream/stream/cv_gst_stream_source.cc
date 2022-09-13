@@ -71,7 +71,7 @@ void CvGstStreamSource::CaptureFrames() {
       }
     }
   }
-};
+}
 
 bool CvGstStreamSource::Open() {
   is_streaming_ = true;

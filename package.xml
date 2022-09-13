@@ -1,14 +1,18 @@
 <?xml version="1.0"?>
-<package format="2">
-    <name>zetton_stream</name>
-    <version>1.0.0</version>
-    <description>Stream-related module for external communication in Project Zetton.</description>
-    <maintainer email="xxdsox@gmail.com">Yusu Pan</maintainer>
-    <license>MIT</license>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>zetton_stream</name>
+  <version>2.0.0</version>
+  <description>Stream-related module for external communication in Project Zetton.</description>
+  <maintainer email="xxdsox@gmail.com">Yusu Pan</maintainer>
+  <license>BSD 2-Clause</license>
+  <url type="repository">https://github.com/project-zetton/zetton-common</url>
+  <author>Yusu Pan</author>
 
-    <buildtool_depend>catkin</buildtool_depend>
-    <build_depend>roscpp</build_depend>
-    <build_depend>zetton_common</build_depend>
-    <exec_depend>roscpp</exec_depend>
-    <exec_depend>zetton_common</exec_depend>
+  <buildtool_depend>cmake</buildtool_depend>
+  <depend>zetton_common</depend>
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
 </package>

@@ -8,15 +8,15 @@
 #include <thread>
 
 #include "opencv2/opencv.hpp"
-#include "zetton_stream/interface/base_stream_output.h"
 #include "zetton_common/thread/ring_buffer.h"
+#include "zetton_stream/interface/base_stream_output.h"
 
 namespace zetton {
 namespace stream {
 
 class GstRtspStreamOutput : public BaseStreamOutput {
  public:
-  ~GstRtspStreamOutput() ;
+  ~GstRtspStreamOutput();
 
   static bool IsSupportedExtension(const char *ext);
   static const char *SupportedExtensions[];
@@ -25,7 +25,7 @@ class GstRtspStreamOutput : public BaseStreamOutput {
   bool Open() override;
   void Close() override;
 
-  bool Render(const cv::Mat & frame);
+  bool Render(const cv::Mat &frame);
   bool Render(void *image, uint32_t width, uint32_t height) override;
 
   void SetStatus(const char *str) override;
@@ -78,7 +78,6 @@ class GstRtspStreamOutput : public BaseStreamOutput {
   /// \brief current mountpoint of output video stream
   std::string mountpoint_ = "/test";
 
-
   /// \brief Mapping between mountpoint and streaming flag
   std::map<std::string, bool> subs_;
   /// \brief Mapping between mountpoint and GStreamer appsrc
@@ -87,5 +86,5 @@ class GstRtspStreamOutput : public BaseStreamOutput {
   std::map<std::string, int> num_of_clients_;
 };
 
-}  // namespace common
+}  // namespace stream
 }  // namespace zetton

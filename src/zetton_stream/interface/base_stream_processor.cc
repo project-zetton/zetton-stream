@@ -10,5 +10,5 @@ bool BaseStreamProcessor::Open() {
 
 void BaseStreamProcessor::Close() { is_streaming_ = false; }
 
-} // namespace stream
-} // namespace zetton
+}  // namespace stream
+}  // namespace zetton

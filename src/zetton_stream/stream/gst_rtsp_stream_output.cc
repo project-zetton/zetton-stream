@@ -102,9 +102,9 @@ bool GstRtspStreamOutput::Init(const StreamOptions &options) {
   options_ = options;
   auto ret = Open();
   return ret;
-};
+}
 
-GstRtspStreamOutput::~GstRtspStreamOutput() { Close(); };
+GstRtspStreamOutput::~GstRtspStreamOutput() { Close(); }
 
 bool GstRtspStreamOutput::Open() {
   // get rtsp mountpoint
@@ -133,7 +133,7 @@ bool GstRtspStreamOutput::Open() {
   }
 
   return false;
-};
+}
 
 void GstRtspStreamOutput::Close() {
   // but if pipeline not created appsrc will be deleted here
@@ -148,12 +148,12 @@ void GstRtspStreamOutput::Close() {
     g_main_loop_quit(loop_);
     if (loop_thread_.joinable()) loop_thread_.join();
   }
-};
+}
 
 bool GstRtspStreamOutput::Render(const cv::Mat &frame) {
   GstBuffer *buf;
   GstCaps *caps;
-  char *gst_type, *gst_format = (char *)"";
+  // char *gst_type, *gst_format = (char *)"";
   // g_print("Image encoding: %s\n", msg->encoding.c_str());
   if (appsrc_[mountpoint_] != nullptr && subs_[mountpoint_]) {
     // Set caps from message
@@ -170,7 +170,7 @@ bool GstRtspStreamOutput::Render(const cv::Mat &frame) {
     return true;
   }
   return false;
-};
+}
 
 bool GstRtspStreamOutput::Render(void *image, uint32_t width, uint32_t height) {
   cv::Mat frame(height, width, CV_8UC3, static_cast<uint8_t *>(image));
@@ -181,7 +181,7 @@ bool GstRtspStreamOutput::Render(void *image, uint32_t width, uint32_t height) {
   return false;
 }
 
-void GstRtspStreamOutput::SetStatus(const char *str){};
+void GstRtspStreamOutput::SetStatus(const char *str) {}
 
 bool GstRtspStreamOutput::BuildPipelineString() {
   std::string head =
@@ -221,7 +221,7 @@ bool GstRtspStreamOutput::BuildPipelineString() {
   }
 
   return false;
-};
+}
 
 void GstRtspStreamOutput::start_video_mainloop() {
   // create and run main event loop

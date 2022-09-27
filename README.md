@@ -7,7 +7,6 @@ Stream-related module for external communication in Project Zetton.
 Recommended environment:
 
 - Ubuntu 18.04
-- ROS Melodic
 - OpenCV 4.1.0+
 - GStreamer 1.14+ (with `libgstrtspserver-1.0-dev`)
 
@@ -24,6 +23,10 @@ Recommended environment:
    | Jetson TX2 | RTSP     | H264  | Works                               |
 
 - `GstRtspStreamOutput` (C++) and `GstRtspStreamer` (Python): streaming given frames via RTSP protocol.
+
+## Known Issues
+
+- The python package has not been switched to colcon building system yet
 
 ## License
 

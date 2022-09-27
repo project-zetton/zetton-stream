@@ -18,7 +18,7 @@ bool BaseStreamOutput::Render(void *image, uint32_t width, uint32_t height) {
   return result;
 }
 
-void BaseStreamOutput::SetStatus(const char *str){};
+void BaseStreamOutput::SetStatus(const char *str) {}
 
-} // namespace stream
-} // namespace zetton
+}  // namespace stream
+}  // namespace zetton

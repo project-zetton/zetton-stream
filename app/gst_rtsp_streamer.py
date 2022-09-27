@@ -8,7 +8,7 @@ from zetton_stream.stream import GstRtspStreamer
 def main():
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        raise RuntimeError('Failed to open camera')
+        raise RuntimeError("Failed to open camera")
     writer = GstRtspStreamer()
 
     try:
@@ -16,12 +16,12 @@ def main():
             ret, frame = cap.read()
             if ret and frame is not None:
                 writer.write(frame)
-    except KeyboardInterrupt as e:
-        print('Pressed Ctrl-C')
+    except KeyboardInterrupt:
+        print("Pressed Ctrl-C")
     finally:
         cap.release()
         writer.release()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

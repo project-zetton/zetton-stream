@@ -13,12 +13,14 @@ class BaseStreamOutput : public BaseStreamProcessor {
   template <typename T>
   bool Render(T* image, uint32_t width, uint32_t height) {
     return Render((void**)image, width, height);
-  };
+  }
+
   virtual bool Render(void* image, uint32_t width, uint32_t height);
 
   inline void AddOutput(BaseStreamOutput* output) {
-    if (output != NULL) outputs_.push_back(output);
+    if (output != nullptr) outputs_.push_back(output);
   }
+
   inline uint32_t GetNumOutputs(BaseStreamOutput* output) const {
     return outputs_.size();
   }

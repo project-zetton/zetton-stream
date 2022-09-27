@@ -211,7 +211,7 @@ inline bool BuildGstPipelineString(const StreamUri& uri, StreamOptions& options,
   pipeline_string = ss.str();
   AINFO_F("Built pipeline string: {}", pipeline_string);
   return true;
-};
+}
 
 inline bool IsGstSupportedExtension(const char* ext, const char** supported) {
   if (!ext) return false;

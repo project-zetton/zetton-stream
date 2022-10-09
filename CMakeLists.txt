@@ -84,6 +84,23 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_definitions(-O2)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+                      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+
+# simd flags
+include(FindSIMD)
+option(WITH_AVX "Compile zetton-stream with AVX intrinsics" ${AVX_FOUND})
+if(WITH_AVX AND AVX_FOUND)
+  set(SIMD_FLAG ${AVX_FLAG})
+  add_definitions(-DWITH_AVX)
+  if(AVX2_FOUND)
+    set(SIMD_FLAG "${SIMD_FLAG} ${AVX2_FLAG}")
+  endif()
+elseif(SSE3_FOUND AND NOT WIN32)
+  set(SIMD_FLAG ${SSE3_FLAG})
+endif()
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SIMD_FLAG}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SIMD_FLAG}")
 
 # useful macros
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/util.cmake)

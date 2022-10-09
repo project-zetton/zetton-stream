@@ -7,9 +7,9 @@ namespace stream {
 
 const char* StreamIoTypeToStr(StreamIoType type) {
   switch (type) {
-    case IO_INPUT:
+    case StreamIoType::IO_INPUT:
       return "input";
-    case IO_OUTPUT:
+    case StreamIoType::IO_OUTPUT:
       return "output";
     default:
       return "input";
@@ -17,27 +17,51 @@ const char* StreamIoTypeToStr(StreamIoType type) {
 }
 
 StreamIoType StreamIoTypeFromStr(const char* str) {
-  if (!str) return IO_INPUT;
-  for (int n = 0; n < IO_MAX_NUM; n++) {
-    const StreamIoType value = (StreamIoType)n;
+  if (!str) return StreamIoType::IO_INPUT;
+  for (int n = 0; n < static_cast<int>(StreamIoType::IO_MAX_NUM); ++n) {
+    const auto value = (StreamIoType)n;
     if (strcasecmp(str, StreamIoTypeToStr(value)) == 0) return value;
   }
-  return IO_INPUT;
+  return StreamIoType::IO_INPUT;
+}
+
+const char* StreamIoMethodToStr(StreamIoMethod type) {
+  switch (type) {
+    case StreamIoMethod::IO_METHOD_UNKNOWN:
+      return "unknown";
+    case StreamIoMethod::IO_METHOD_READ:
+      return "read";
+    case StreamIoMethod::IO_METHOD_MMAP:
+      return "mmap";
+    case StreamIoMethod::IO_METHOD_USERPTR:
+      return "userptr";
+    default:
+      return "unknown";
+  }
+}
+
+StreamIoMethod StreamIoMethodFromStr(const char* str) {
+  if (!str) return StreamIoMethod::IO_METHOD_UNKNOWN;
+  for (int n = 0; n < static_cast<int>(StreamIoMethod::IO_METHOD_MAX_NUM);
+       ++n) {
+    const auto value = (StreamIoMethod)n;
+    if (strcasecmp(str, StreamIoMethodToStr(value)) == 0) return value;
+  }
 }
 
 const char* StreamDeviceTypeToStr(StreamDeviceType type) {
   switch (type) {
-    case DEVICE_DEFAULT:
+    case StreamDeviceType::DEVICE_DEFAULT:
       return "default";
-    case DEVICE_V4L2:
+    case StreamDeviceType::DEVICE_V4L2:
       return "v4l2";
-    case DEVICE_CSI:
+    case StreamDeviceType::DEVICE_CSI:
       return "csi";
-    case DEVICE_IP:
+    case StreamDeviceType::DEVICE_IP:
       return "ip";
-    case DEVICE_FILE:
+    case StreamDeviceType::DEVICE_FILE:
       return "file";
-    case DEVICE_DISPLAY:
+    case StreamDeviceType::DEVICE_DISPLAY:
       return "display";
     default:
       return "default";
@@ -45,31 +69,31 @@ const char* StreamDeviceTypeToStr(StreamDeviceType type) {
 }
 
 StreamDeviceType StreamDeviceTypeFromStr(const char* str) {
-  if (!str) return DEVICE_DEFAULT;
-  for (int n = 0; n < DEVICE_MAX_NUM; n++) {
-    const StreamDeviceType value = (StreamDeviceType)n;
+  if (!str) return StreamDeviceType::DEVICE_DEFAULT;
+  for (int n = 0; n < static_cast<int>(StreamDeviceType::DEVICE_MAX_NUM); ++n) {
+    const auto value = (StreamDeviceType)n;
     if (strcasecmp(str, StreamDeviceTypeToStr(value)) == 0) return value;
   }
-  return DEVICE_DEFAULT;
+  return StreamDeviceType::DEVICE_DEFAULT;
 }
 
 const char* StreamFlipMethodToStr(StreamFlipMethod flip) {
   switch (flip) {
-    case FLIP_NONE:
+    case StreamFlipMethod::FLIP_NONE:
       return "none";
-    case FLIP_COUNTERCLOCKWISE:
+    case StreamFlipMethod::FLIP_COUNTERCLOCKWISE:
       return "counterclockwise";
-    case FLIP_ROTATE_180:
+    case StreamFlipMethod::FLIP_ROTATE_180:
       return "rotate-180";
-    case FLIP_CLOCKWISE:
+    case StreamFlipMethod::FLIP_CLOCKWISE:
       return "clockwise";
-    case FLIP_HORIZONTAL:
+    case StreamFlipMethod::FLIP_HORIZONTAL:
       return "horizontal";
-    case FLIP_UPPER_RIGHT_DIAGONAL:
+    case StreamFlipMethod::FLIP_UPPER_RIGHT_DIAGONAL:
       return "upper-right-diagonal";
-    case FLIP_VERTICAL:
+    case StreamFlipMethod::FLIP_VERTICAL:
       return "vertical";
-    case FLIP_UPPER_LEFT_DIAGONAL:
+    case StreamFlipMethod::FLIP_UPPER_LEFT_DIAGONAL:
       return "upper-left-diagonal";
     default:
       return "none";
@@ -77,33 +101,33 @@ const char* StreamFlipMethodToStr(StreamFlipMethod flip) {
 }
 
 StreamFlipMethod StreamFlipMethodFromStr(const char* str) {
-  if (!str) return FLIP_NONE;
-  for (int n = 0; n < FLIP_MAX_NUM; n++) {
-    const StreamFlipMethod value = (StreamFlipMethod)n;
+  if (!str) return StreamFlipMethod::FLIP_NONE;
+  for (int n = 0; n < static_cast<int>(StreamFlipMethod::FLIP_MAX_NUM); ++n) {
+    const auto value = (StreamFlipMethod)n;
     if (strcasecmp(str, StreamFlipMethodToStr(value)) == 0) return value;
   }
-  return FLIP_NONE;
+  return StreamFlipMethod::FLIP_NONE;
 }
 
 const char* StreamCodecToStr(StreamCodec codec) {
   switch (codec) {
-    case CODEC_UNKNOWN:
+    case StreamCodec::CODEC_UNKNOWN:
       return "unknown";
-    case CODEC_RAW:
+    case StreamCodec::CODEC_RAW:
       return "raw";
-    case CODEC_H264:
+    case StreamCodec::CODEC_H264:
       return "h264";
-    case CODEC_H265:
+    case StreamCodec::CODEC_H265:
       return "h265";
-    case CODEC_VP8:
+    case StreamCodec::CODEC_VP8:
       return "vp8";
-    case CODEC_VP9:
+    case StreamCodec::CODEC_VP9:
       return "vp9";
-    case CODEC_MPEG2:
+    case StreamCodec::CODEC_MPEG2:
       return "mpeg2";
-    case CODEC_MPEG4:
+    case StreamCodec::CODEC_MPEG4:
       return "mpeg4";
-    case CODEC_MJPEG:
+    case StreamCodec::CODEC_MJPEG:
       return "mjpeg";
     default:
       return "unknown";
@@ -111,21 +135,21 @@ const char* StreamCodecToStr(StreamCodec codec) {
 }
 
 StreamCodec StreamCodecFromStr(const char* str) {
-  if (!str) return CODEC_UNKNOWN;
-  for (int n = 0; n < CODEC_MAX_NUM; n++) {
-    const StreamCodec value = (StreamCodec)n;
+  if (!str) return StreamCodec::CODEC_UNKNOWN;
+  for (int n = 0; n < static_cast<int>(StreamCodec::CODEC_MAX_NUM); ++n) {
+    const auto value = (StreamCodec)n;
     if (strcasecmp(str, StreamCodecToStr(value)) == 0) return value;
   }
-  return CODEC_UNKNOWN;
+  return StreamCodec::CODEC_UNKNOWN;
 }
 
 const char* StreamPlatformTypeToStr(StreamPlatformType platform) {
   switch (platform) {
-    case PLATFORM_CPU:
+    case StreamPlatformType::PLATFORM_CPU:
       return "cput";
-    case PLATFORM_GPU:
+    case StreamPlatformType::PLATFORM_GPU:
       return "gpu";
-    case PLATFORM_JETSON:
+    case StreamPlatformType::PLATFORM_JETSON:
       return "jetson";
     default:
       return "cpu";
@@ -133,36 +157,45 @@ const char* StreamPlatformTypeToStr(StreamPlatformType platform) {
 }
 
 StreamPixelFormat StreamPixelFormatFromStr(const char* str) {
-  if (!str) return PIXEL_FORMAT_UNKNOWN;
-  for (int n = 0; n < PIXEL_FORMAT_MAX_NUM; n++) {
-    const StreamPixelFormat value = (StreamPixelFormat)n;
+  if (!str) return StreamPixelFormat::PIXEL_FORMAT_UNKNOWN;
+  for (int n = 0; n < static_cast<int>(StreamPixelFormat::PIXEL_FORMAT_MAX_NUM);
+       ++n) {
+    const auto value = (StreamPixelFormat)n;
     if (strcasecmp(str, StreamPixelFormatToStr(value)) == 0) return value;
   }
-  return PIXEL_FORMAT_UNKNOWN;
+  return StreamPixelFormat::PIXEL_FORMAT_UNKNOWN;
 }
 
 const char* StreamPixelFormatToStr(StreamPixelFormat pixel_format) {
   switch (pixel_format) {
-    case PIXEL_FORMAT_RGB:
+    case StreamPixelFormat::PIXEL_FORMAT_RGB:
       return "RGB";
-    case PIXEL_FORMAT_RGB16:
+    case StreamPixelFormat::PIXEL_FORMAT_RGB16:
       return "RGB16";
-    case PIXEL_FORMAT_RGBA:
+    case StreamPixelFormat::PIXEL_FORMAT_RGBA:
       return "RGBA";
-    case PIXEL_FORMAT_RGBA16:
+    case StreamPixelFormat::PIXEL_FORMAT_RGBA16:
       return "RGBA16";
-    case PIXEL_FORMAT_BGR:
+    case StreamPixelFormat::PIXEL_FORMAT_BGR:
       return "BGR";
-    case PIXEL_FORMAT_BGR16:
+    case StreamPixelFormat::PIXEL_FORMAT_BGR16:
       return "BGR16";
-    case PIXEL_FORMAT_BGRA:
+    case StreamPixelFormat::PIXEL_FORMAT_BGRA:
       return "BGRA";
-    case PIXEL_FORMAT_BGRA16:
+    case StreamPixelFormat::PIXEL_FORMAT_BGRA16:
       return "BGRA16";
-    case PIXEL_FORMAT_GRAY8:
+    case StreamPixelFormat::PIXEL_FORMAT_GRAY8:
       return "GRAY8";
-    case PIXEL_FORMAT_GRAY16_LE:
+    case StreamPixelFormat::PIXEL_FORMAT_GRAY16_LE:
       return "GRAY16_LE";
+    case StreamPixelFormat::PIXEL_FORMAT_YUYV:
+      return "YUYV";
+    case StreamPixelFormat::PIXEL_FORMAT_UYVY:
+      return "UYVY";
+    case StreamPixelFormat::PIXEL_FORMAT_MJPEG:
+      return "MJPEG";
+    case StreamPixelFormat::PIXEL_FORMAT_YUVMONO10:
+      return "YUVMONO10";
     default:
       return "BGR";
   }
@@ -170,8 +203,9 @@ const char* StreamPixelFormatToStr(StreamPixelFormat pixel_format) {
 
 StreamPlatformType StreamPlatformTypeFromStr(const char* str) {
   if (!str) return StreamPlatformType::PLATFORM_CPU;
-  for (int n = 0; n < PLATFORM_MAX_NUM; n++) {
-    const StreamPlatformType value = (StreamPlatformType)n;
+  for (int n = 0; n < static_cast<int>(StreamPlatformType::PLATFORM_MAX_NUM);
+       ++n) {
+    const auto value = (StreamPlatformType)n;
     if (strcasecmp(str, StreamPlatformTypeToStr(value)) == 0) return value;
   }
   return StreamPlatformType::PLATFORM_CPU;
@@ -186,11 +220,14 @@ StreamOptions::StreamOptions() {
   loop = 0;
   zero_copy = true;
   async = false;
+  monochrome = false;
   io_type = StreamIoType::IO_INPUT;
+  io_method = StreamIoMethod::IO_METHOD_MMAP;
   device_type = StreamDeviceType::DEVICE_DEFAULT;
   flip_method = StreamFlipMethod::FLIP_NONE;
   codec = StreamCodec::CODEC_UNKNOWN;
   pixel_format = StreamPixelFormat::PIXEL_FORMAT_BGR;
+  output_format = pixel_format;
 }
 
 }  // namespace stream

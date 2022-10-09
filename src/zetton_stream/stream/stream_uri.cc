@@ -36,8 +36,9 @@ const char* StreamProtocolTypeToStr(StreamProtocolType type) {
 
 StreamProtocolType StreamProtocolTypeFromStr(const char* str) {
   if (!str) return StreamProtocolType::PROTOCOL_DEFAULT;
-  for (int n = 0; n < StreamProtocolType::PROTOCOL_MAX_NUM; n++) {
-    const StreamProtocolType value = (StreamProtocolType)n;
+  for (int n = 0; n < static_cast<int>(StreamProtocolType::PROTOCOL_MAX_NUM);
+       ++n) {
+    const auto value = (StreamProtocolType)n;
     if (strcasecmp(str, StreamProtocolTypeToStr(value)) == 0) return value;
   }
   return StreamProtocolType::PROTOCOL_DEFAULT;

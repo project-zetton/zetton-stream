@@ -5,7 +5,7 @@
 namespace zetton {
 namespace stream {
 
-enum StreamProtocolType {
+enum class StreamProtocolType {
   PROTOCOL_DEFAULT = 0,
   PROTOCOL_V4L2,
   PROTOCOL_CSI,

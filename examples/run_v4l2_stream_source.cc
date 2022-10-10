@@ -3,7 +3,9 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgcodecs.hpp>
 
+#include "zetton_common/time/time.h"
 #include "zetton_common/util/log.h"
+#include "zetton_common/util/perf.h"
 #include "zetton_stream/stream/stream_options.h"
 #include "zetton_stream/stream/stream_uri.h"
 #include "zetton_stream/stream/v4l2_stream_source.h"
@@ -16,7 +18,7 @@ int main(int argc, char** argv) {
   options.output_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_RGB;
   options.io_method = zetton::stream::StreamIoMethod::IO_METHOD_MMAP;
   options.width = 640;
-  options.height = 360;
+  options.height = 480;
   options.frame_rate = 30;
 
   // init streamer
@@ -42,22 +44,51 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  // start capturing
+  // capture and save image
   while (true) {
+    // wait for device
     if (!source->wait_for_device()) {
-      usleep(2000000);
+      AERROR_F("wait for device error");
+      usleep(100000);
+      continue;
+    }
+    // poll image from camera
+    if (!source->poll(raw_image)) {
+      AERROR << "camera device poll failed";
+      usleep(100000);
+      continue;
+    }
+    // write to file
+    cv::Mat image(raw_image->height, raw_image->width, CV_8UC3,
+                  raw_image->image);
+    cv::imwrite("test.jpg", image);
+    break;
+  }
+
+  // benchmark
+  zetton::common::FpsCalculator fps;
+  auto counter = 0;
+  while (counter < 100) {
+    // start timer
+    fps.Start();
+    // wait for device
+    if (!source->wait_for_device()) {
+      usleep(100000);
       AERROR_F("wait for device error");
       continue;
     }
+    // poll image from camera
     if (!source->poll(raw_image)) {
       AERROR << "camera device poll failed";
       continue;
     }
-    cv::Mat image(raw_image->height, raw_image->width, CV_8UC3,
-                  raw_image->image);
-    cv::imwrite("test.jpg", image);
-    usleep(200000);
+    // stop timer
+    fps.End();
+    counter += 1;
   }
+
+  // print profiling info
+  fps.PrintInfo("V4l2StreamSource");
 
   return 0;
 }

@@ -7,7 +7,8 @@
 #include "zetton_common/util/perf.h"
 #include "zetton_stream/interface/base_stream_processor.h"
 #include "zetton_stream/stream/stream_options.h"
-#include "zetton_stream/util/v4l2_util.h"
+#include "zetton_stream/util/pixel_format.h"
+#include "zetton_stream/util/v4l2.h"
 
 #define __STDC_CONSTANT_MACROS
 #include <fcntl.h>
@@ -236,7 +237,7 @@ bool V4l2StreamSource::poll(const CameraImagePtr& raw_image) {
   }
 
   if (0 == r) {
-    AERROR << "select timeout";
+    AERROR_F("select timeout: code {} msg {}", errno, strerror(errno));
     reconnect();
   }
 

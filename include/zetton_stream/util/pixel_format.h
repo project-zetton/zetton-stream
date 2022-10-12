@@ -6,8 +6,6 @@
 namespace zetton {
 namespace stream {
 
-void errno_exit(const char *s);
-int xioctl(int fd, int request, void *arg);
 unsigned char CLIPVALUE(int val);
 
 void YUV2RGB(const unsigned char y, const unsigned char u,

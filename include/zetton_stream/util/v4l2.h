@@ -4,6 +4,8 @@
 #include "zetton_stream/util/v4l/cv4l-helpers.h"
 #include "zetton_stream/util/v4l/v4l-helpers.h"
 
+#define CLEAR(x) memset(&(x), 0, sizeof(x))
+
 namespace zetton {
 namespace stream {
 

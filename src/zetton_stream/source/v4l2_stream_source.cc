@@ -1,20 +1,7 @@
 #include "zetton_stream/source/v4l2_stream_source.h"
 
-#include <linux/videodev2.h>
-
-#include "zetton_common/log/log.h"
-#include "zetton_common/time/time.h"
-#include "zetton_common/util/perf.h"
-#include "zetton_stream/base/stream_options.h"
-#include "zetton_stream/interface/base_stream_processor.h"
-#include "zetton_stream/util/pixel_format.h"
-#include "zetton_stream/util/v4l2.h"
-
-#define __STDC_CONSTANT_MACROS
 #include <fcntl.h>
-#include <malloc.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
+#include <linux/videodev2.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -26,7 +13,15 @@
 #include <cstdlib>
 #include <cstring>
 
-#define CLEAR(x) memset(&(x), 0, sizeof(x))
+#include "zetton_common/log/log.h"
+#include "zetton_common/time/time.h"
+#include "zetton_common/util/perf.h"
+#include "zetton_stream/base/stream_options.h"
+#include "zetton_stream/interface/base_stream_processor.h"
+#include "zetton_stream/util/pixel_format.h"
+#include "zetton_stream/util/v4l2.h"
+
+// #define __STDC_CONSTANT_MACROS
 
 namespace zetton {
 namespace stream {
@@ -37,14 +32,6 @@ V4l2StreamSource::V4l2StreamSource()
       n_buffers_(0),
       is_capturing_(false),
       image_seq_(0),
-      avframe_camera_(nullptr),
-      avframe_rgb_(nullptr),
-      avcodec_(nullptr),
-      avoptions_(nullptr),
-      avcodec_context_(nullptr),
-      avframe_camera_size_(0),
-      avframe_rgb_size_(0),
-      video_sws_(nullptr),
       device_wait_sec_(2) {}
 
 V4l2StreamSource::~V4l2StreamSource() { shutdown(); }
@@ -59,7 +46,7 @@ bool V4l2StreamSource::Init(const StreamOptions& options) {
     pixel_format_ = V4L2_PIX_FMT_UYVY;
   } else if (options_.pixel_format == StreamPixelFormat::PIXEL_FORMAT_MJPEG) {
     pixel_format_ = V4L2_PIX_FMT_MJPEG;
-    init_mjpeg_decoder(options_.width, options_.height);
+    mjpeg_decoder_.Init(options_.width, options_.height);
   } else if (options_.pixel_format ==
              StreamPixelFormat::PIXEL_FORMAT_YUVMONO10) {
     // actually format V4L2_PIX_FMT_Y16 (10-bit mono expresed as 16-bit pixels),
@@ -83,130 +70,6 @@ bool V4l2StreamSource::Init(const StreamOptions& options) {
   frame_drop_interval_ = static_cast<float>(0.9 / options_.frame_rate);
 
   return true;
-}
-
-int V4l2StreamSource::init_mjpeg_decoder(int image_width, int image_height) {
-  avcodec_register_all();
-
-  avcodec_ = avcodec_find_decoder(AV_CODEC_ID_MJPEG);
-  if (!avcodec_) {
-    AERROR_F("Could not find MJPEG decoder");
-    return 0;
-  }
-
-  avcodec_context_ = avcodec_alloc_context3(avcodec_);
-
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 0, 0)
-  avframe_camera_ = av_frame_alloc();
-  avframe_rgb_ = av_frame_alloc();
-  avpicture_alloc(reinterpret_cast<AVPicture*>(avframe_rgb_), AV_PIX_FMT_RGB24,
-                  image_width, image_height);
-#else
-  avframe_camera_ = avcodec_alloc_frame();
-  avframe_rgb_ = avcodec_alloc_frame();
-  avpicture_alloc(reinterpret_cast<AVPicture*>(avframe_rgb_), PIX_FMT_RGB24,
-                  image_width, image_height);
-#endif
-
-  avcodec_context_->codec_id = AV_CODEC_ID_MJPEG;
-  avcodec_context_->width = image_width;
-  avcodec_context_->height = image_height;
-
-#if LIBAVCODEC_VERSION_MAJOR > 52
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 0, 0)
-  avcodec_context_->pix_fmt = AV_PIX_FMT_YUV422P;
-#else
-  avcodec_context_->pix_fmt = PIX_FMT_YUV422P;
-#endif
-  avcodec_context_->codec_type = AVMEDIA_TYPE_VIDEO;
-#endif
-
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 0, 0)
-  avframe_camera_size_ =
-      avpicture_get_size(AV_PIX_FMT_YUV422P, image_width, image_height);
-  avframe_rgb_size_ =
-      avpicture_get_size(AV_PIX_FMT_RGB24, image_width, image_height);
-#else
-  avframe_camera_size_ =
-      avpicture_get_size(PIX_FMT_YUV422P, image_width, image_height);
-  avframe_rgb_size_ =
-      avpicture_get_size(PIX_FMT_RGB24, image_width, image_height);
-#endif
-
-  /* open it */
-  if (avcodec_open2(avcodec_context_, avcodec_, &avoptions_) < 0) {
-    AERROR_F("Could not open MJPEG Decoder");
-    return 0;
-  }
-  return 1;
-}
-
-void V4l2StreamSource::mjpeg2rgb(char* mjpeg_buffer, int len, char* rgb_buffer,
-                                 int NumPixels) {
-  int got_picture = 0;
-
-  memset(rgb_buffer, 0, avframe_rgb_size_);
-
-#if LIBAVCODEC_VERSION_MAJOR > 52
-  int decoded_len;
-  AVPacket avpkt;
-  av_init_packet(&avpkt);
-
-  avpkt.size = len;
-  avpkt.data = (unsigned char*)mjpeg_buffer;
-  decoded_len = avcodec_decode_video2(avcodec_context_, avframe_camera_,
-                                      &got_picture, &avpkt);
-
-  if (decoded_len < 0) {
-    AERROR_F("Error while decoding frame.");
-    return;
-  }
-#else
-  avcodec_decode_video(avcodec_context_, avframe_camera_, &got_picture,
-                       reinterpret_cast<uint8_t*>(mjpeg_buffer), len);
-#endif
-
-  if (!got_picture) {
-    AERROR_F("Camera: expected picture but didn't get it...");
-    return;
-  }
-
-  int xsize = avcodec_context_->width;
-  int ysize = avcodec_context_->height;
-  int pic_size = avpicture_get_size(avcodec_context_->pix_fmt, xsize, ysize);
-  if (pic_size != avframe_camera_size_) {
-    AERROR_F("outbuf size mismatch. pic_size: {} bufsize: {}", pic_size,
-             avframe_camera_size_);
-    return;
-  }
-
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 0, 0)
-  video_sws_ =
-      sws_getContext(xsize, ysize, avcodec_context_->pix_fmt, xsize, ysize,
-                     AV_PIX_FMT_RGB24, SWS_BILINEAR, nullptr, nullptr, nullptr);
-#else
-  video_sws_ =
-      sws_getContext(xsize, ysize, avcodec_context_->pix_fmt, xsize, ysize,
-                     PIX_FMT_RGB24, SWS_BILINEAR, nullptr, nullptr, nullptr);
-#endif
-
-  sws_scale(video_sws_, avframe_camera_->data, avframe_camera_->linesize, 0,
-            ysize, avframe_rgb_->data, avframe_rgb_->linesize);
-  sws_freeContext(video_sws_);
-
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 0, 0)
-  int size = avpicture_layout(
-      reinterpret_cast<AVPicture*>(avframe_rgb_), AV_PIX_FMT_RGB24, xsize,
-      ysize, reinterpret_cast<uint8_t*>(rgb_buffer), avframe_rgb_size_);
-#else
-  int size = avpicture_layout(
-      reinterpret_cast<AVPicture*>(avframe_rgb_), PIX_FMT_RGB24, xsize, ysize,
-      reinterpret_cast<uint8_t*>(rgb_buffer), avframe_rgb_size_);
-#endif
-  if (size != avframe_rgb_size_) {
-    AERROR_F("webcam: avpicture_layout error: {}", size);
-    return;
-  }
 }
 
 bool V4l2StreamSource::poll(const CameraImagePtr& raw_image) {
@@ -941,7 +804,8 @@ bool V4l2StreamSource::process_image(void* src, int len, CameraImagePtr dest) {
 #endif
     } else if (pixel_format_ == V4L2_PIX_FMT_MJPEG) {
       // 1.1.4. convert MJPEG to RGB
-      mjpeg2rgb((char*)src, len, dest->image, dest->width * dest->height);
+      mjpeg_decoder_.ToRGB((char*)src, len, dest->image,
+                           dest->width * dest->height);
     } else if (pixel_format_ == V4L2_PIX_FMT_RGB24) {
       // 1.1.5. convert RGB to RGB
       rgb242rgb((char*)src, dest->image, dest->width * dest->height);
@@ -1084,16 +948,6 @@ void V4l2StreamSource::shutdown() {
   stop_capturing();
   uninit_device();
   close_device();
-
-  if (avcodec_context_) {
-    avcodec_close(avcodec_context_);
-    av_free(avcodec_context_);
-    avcodec_context_ = nullptr;
-  }
-  if (avframe_camera_) av_free(avframe_camera_);
-  avframe_camera_ = nullptr;
-  if (avframe_rgb_) av_free(avframe_rgb_);
-  avframe_rgb_ = nullptr;
 }
 
 }  // namespace stream

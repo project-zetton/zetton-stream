@@ -5,26 +5,14 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
-#include "zetton_stream/base/stream_options.h"
-
-extern "C" {
-#include <libavcodec/avcodec.h>
-#include <libavutil/mem.h>
-#include <libswscale/swscale.h>
-#include <linux/videodev2.h>
-}
-
-#include <libavcodec/version.h>
-#if LIBAVCODEC_VERSION_MAJOR < 55
-#define AV_CODEC_ID_MJPEG CODEC_ID_MJPEG
-#endif
-
 #include <memory>
 #include <sstream>
 #include <string>
 
 #include "zetton_stream/base/frame.h"
+#include "zetton_stream/base/stream_options.h"
 #include "zetton_stream/interface/base_stream_source.h"
+#include "zetton_stream/util/mjpeg_decoder.h"
 
 namespace zetton {
 namespace stream {
@@ -57,9 +45,6 @@ class V4l2StreamSource {
   void set_v4l_parameter(const std::string& param, int value);
   void set_v4l_parameter(const std::string& param, const std::string& value);
 
-  int init_mjpeg_decoder(int image_width, int image_height);
-  void mjpeg2rgb(char* mjepg_buffer, int len, char* rgb_buffer, int pixels);
-
   bool init_read(unsigned int buffer_size);
   bool init_mmap();
   bool init_userp(unsigned int buffer_size);
@@ -75,6 +60,7 @@ class V4l2StreamSource {
 
  private:
   StreamOptions options_;
+  MjpegDecoder mjpeg_decoder_;
 
   unsigned int pixel_format_;
   bool monochrome_;
@@ -84,15 +70,6 @@ class V4l2StreamSource {
 
   bool is_capturing_;
   uint64_t image_seq_;
-
-  AVFrame* avframe_camera_;
-  AVFrame* avframe_rgb_;
-  AVCodec* avcodec_;
-  AVDictionary* avoptions_;
-  AVCodecContext* avcodec_context_;
-  int avframe_camera_size_;
-  int avframe_rgb_size_;
-  struct SwsContext* video_sws_;
 
   float frame_warning_interval_ = 0.0;
   float device_wait_sec_ = 0.0;

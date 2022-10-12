@@ -72,7 +72,7 @@ bool V4l2StreamSource::Init(const StreamOptions& options) {
   return true;
 }
 
-bool V4l2StreamSource::poll(const CameraImagePtr& raw_image) {
+bool V4l2StreamSource::Capture(const CameraImagePtr& raw_image) {
   raw_image->is_new = 0;
   // free memory in this struct desturctor
   memset(raw_image->image, 0, raw_image->image_size * sizeof(char));
@@ -838,7 +838,7 @@ bool V4l2StreamSource::process_image(void* src, int len, CameraImagePtr dest) {
   return true;
 }
 
-bool V4l2StreamSource::is_capturing() { return is_capturing_; }
+bool V4l2StreamSource::IsCapturing() { return is_capturing_; }
 
 // enables/disables auto focus
 void V4l2StreamSource::set_auto_focus(int value) {
@@ -915,7 +915,7 @@ void V4l2StreamSource::set_v4l_parameter(const std::string& param,
   }
 }
 
-bool V4l2StreamSource::wait_for_device() {
+bool V4l2StreamSource::WaitForDevice() {
   if (is_capturing_) {
     ADEBUG << "is capturing";
     return true;

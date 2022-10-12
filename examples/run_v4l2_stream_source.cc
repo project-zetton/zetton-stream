@@ -5,21 +5,33 @@
 
 #include "zetton_common/util/log.h"
 #include "zetton_common/util/perf.h"
+#include "zetton_stream/source/cv4l2_stream_source.h"
 #include "zetton_stream/source/v4l2_stream_source.h"
 
 int main(int argc, char** argv) {
   // prepare stream url
   zetton::stream::StreamOptions options;
   options.resource = zetton::stream::StreamUri("v4l2:///dev/video0");
-  options.pixel_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_MJPEG;
   options.output_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_RGB;
   options.io_method = zetton::stream::StreamIoMethod::IO_METHOD_MMAP;
+#if 0
+  options.pixel_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_YUYV;
+  options.width = 640;
+  options.height = 360;
+  options.frame_rate = 30;
+#else
+  options.pixel_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_MJPEG;
   options.width = 1280;
   options.height = 960;
   options.frame_rate = 30;
+#endif
 
-  // init streamer
+// init streamer
+#if 1
+  auto source = std::make_shared<zetton::stream::CV4l2StreamSource>();
+#else
   auto source = std::make_shared<zetton::stream::V4l2StreamSource>();
+#endif
   source->Init(options);
 
   // init output image
@@ -47,13 +59,13 @@ int main(int argc, char** argv) {
   // capture and save image
   while (true) {
     // wait for device
-    if (!source->wait_for_device()) {
+    if (!source->WaitForDevice()) {
       AERROR_F("wait for device error");
       usleep(100000);
       continue;
     }
     // poll image from camera
-    if (!source->poll(raw_image)) {
+    if (!source->Capture(raw_image)) {
       AERROR << "camera device poll failed";
       usleep(100000);
       continue;
@@ -72,13 +84,13 @@ int main(int argc, char** argv) {
     // start timer
     fps.Start();
     // wait for device
-    if (!source->wait_for_device()) {
+    if (!source->WaitForDevice()) {
       usleep(100000);
       AERROR_F("wait for device error");
       continue;
     }
     // poll image from camera
-    if (!source->poll(raw_image)) {
+    if (!source->Capture(raw_image)) {
       AERROR << "camera device poll failed";
       continue;
     }

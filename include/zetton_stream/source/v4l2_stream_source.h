@@ -29,10 +29,10 @@ class V4l2StreamSource {
 
  public:
   // user use this function to get camera frame data
-  virtual bool poll(const CameraImagePtr& raw_image);
+  bool Capture(const CameraImagePtr& raw_image);
 
-  bool is_capturing();
-  bool wait_for_device();
+  bool IsCapturing();
+  bool WaitForDevice();
 
  private:
   bool init_device();
@@ -69,8 +69,8 @@ class V4l2StreamSource {
   unsigned int n_buffers_;
 
   bool is_capturing_;
-  uint64_t image_seq_;
 
+  uint64_t image_seq_;
   float frame_warning_interval_ = 0.0;
   float device_wait_sec_ = 0.0;
   uint64_t last_nsec_ = 0;

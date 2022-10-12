@@ -206,9 +206,9 @@ bool CV4l2StreamSource::InitDevice() {
   fmt.s_height(options_.height);
   fmt.s_pixelformat(pixel_format_);
   if (fd_.s_fmt(fmt) != 0) {
-    AERROR_F("cannot set format for device {}: code {}, string [{}]",
-             options_.resource.location, errno, strerror(errno));
-    return false;
+    AWARN_F("cannot set format for device {}: code {}, string [{}]",
+            options_.resource.location, errno, strerror(errno));
+    // return false;
   }
   // note that VIDIOC_S_FMT may change width and height
   // workaround for buggy driver paranoia.
@@ -228,10 +228,10 @@ bool CV4l2StreamSource::InitDevice() {
   // 2.2. set frame rate
   v4l2_fract frame_rate;
   if (fd_.get_interval(frame_rate) != 0) {
-    AERROR_F("cannot get frame rate for device {}: code {}, string [{}]",
-             options_.resource.location, errno, strerror(errno));
+    AWARN_F("cannot get frame rate for device {}: code {}, string [{}]",
+            options_.resource.location, errno, strerror(errno));
     Shutdown();
-    return false;
+    // return false;
   }
   frame_rate.numerator = 1;
   frame_rate.denominator = options_.frame_rate;

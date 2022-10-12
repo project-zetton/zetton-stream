@@ -6,15 +6,26 @@
 namespace zetton {
 namespace stream {
 
+void errno_exit(const char *s);
+int xioctl(int fd, int request, void *arg);
+unsigned char CLIPVALUE(int val);
+
+void YUV2RGB(const unsigned char y, const unsigned char u,
+             const unsigned char v, unsigned char *r, unsigned char *g,
+             unsigned char *b);
+void uyvy2yuyv(char *src, int len);
+void uyvy2rgb(char *YUV, char *RGB, int NumPixels);
+void mono102mono8(char *RAW, char *MONO, int NumPixels);
+void yuyv2rgb(char *YUV, char *RGB, int NumPixels);
+void rgb242rgb(char *YUV, char *RGB, int NumPixels);
+
 int convert_yuv_to_rgb_pixel(int y, int u, int v);
 int convert_yuv_to_rgb_buffer(unsigned char *yuv, unsigned char *rgb,
                               unsigned int width, unsigned int height);
 
 #ifdef WITH_AVX
-void yuyv2rgb_avx(unsigned char *YUV, unsigned char *RGB, int NumPixels);
-
 #define SIMD_INLINE inline __attribute__((always_inline))
-
+void yuyv2rgb_avx(unsigned char *YUV, unsigned char *RGB, int NumPixels);
 void print_m256(const __m256i a);
 void print_m256_i32(const __m256i a);
 void print_m256_i16(const __m256i a);

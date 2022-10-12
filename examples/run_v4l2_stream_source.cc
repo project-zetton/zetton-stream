@@ -14,11 +14,11 @@ int main(int argc, char** argv) {
   // prepare stream url
   zetton::stream::StreamOptions options;
   options.resource = zetton::stream::StreamUri("v4l2:///dev/video0");
-  options.pixel_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_YUYV;
+  options.pixel_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_MJPEG;
   options.output_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_RGB;
   options.io_method = zetton::stream::StreamIoMethod::IO_METHOD_MMAP;
-  options.width = 640;
-  options.height = 480;
+  options.width = 1280;
+  options.height = 960;
   options.frame_rate = 30;
 
   // init streamer
@@ -32,13 +32,16 @@ int main(int argc, char** argv) {
   if (options.output_format ==
       zetton::stream::StreamPixelFormat::PIXEL_FORMAT_YUYV) {
     raw_image->image_size = raw_image->width * raw_image->height * 2;
+    raw_image->bytes_per_pixel = 2;
   } else if (options.output_format ==
              zetton::stream::StreamPixelFormat::PIXEL_FORMAT_RGB) {
     raw_image->image_size = raw_image->width * raw_image->height * 3;
+    raw_image->bytes_per_pixel = 3;
   }
   raw_image->is_new = 0;
   raw_image->image =
       reinterpret_cast<char*>(calloc(raw_image->image_size, sizeof(char)));
+  memset(raw_image->image, 0, raw_image->image_size * sizeof(char));
   if (raw_image->image == nullptr) {
     AERROR << "system calloc memory error, size:" << raw_image->image_size;
     return 1;

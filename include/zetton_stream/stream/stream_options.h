@@ -125,7 +125,6 @@ struct StreamOptions {
   bool zero_copy;
   int loop;
   bool async;
-  bool monochrome;
 
   StreamDeviceType device_type;
   StreamIoType io_type;

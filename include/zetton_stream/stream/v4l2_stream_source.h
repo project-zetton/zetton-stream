@@ -23,36 +23,11 @@ extern "C" {
 #include <sstream>
 #include <string>
 
+#include "zetton_stream/base/frame.h"
 #include "zetton_stream/interface/base_stream_source.h"
 
 namespace zetton {
 namespace stream {
-
-// camera raw image struct
-struct CameraImage {
-  int width;
-  int height;
-  int bytes_per_pixel;
-  int image_size;
-  int is_new;
-  int tv_sec;
-  int tv_usec;
-  char* image;
-
-  ~CameraImage() {
-    if (image != nullptr) {
-      free(reinterpret_cast<void*>(image));
-      image = nullptr;
-    }
-  }
-};
-
-using CameraImagePtr = std::shared_ptr<CameraImage>;
-
-struct buffer {
-  void* start;
-  size_t length;
-};
 
 class V4l2StreamSource {
  public:
@@ -72,7 +47,6 @@ class V4l2StreamSource {
   bool wait_for_device();
 
  private:
-  int xioctl(int fd, int request, void* arg);
   bool init_device();
   bool uninit_device();
 
@@ -97,12 +71,17 @@ class V4l2StreamSource {
   bool stop_capturing();
   void reconnect();
   void reset_device();
+  void shutdown();
 
+ private:
   StreamOptions options_;
-  int pixel_format_;
+
+  unsigned int pixel_format_;
+  bool monochrome_;
   int fd_;
-  buffer* buffers_;
+  CameraBuffer* buffers_;
   unsigned int n_buffers_;
+
   bool is_capturing_;
   uint64_t image_seq_;
 

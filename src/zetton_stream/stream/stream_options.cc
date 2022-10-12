@@ -220,7 +220,6 @@ StreamOptions::StreamOptions() {
   loop = 0;
   zero_copy = true;
   async = false;
-  monochrome = false;
   io_type = StreamIoType::IO_INPUT;
   io_method = StreamIoMethod::IO_METHOD_MMAP;
   device_type = StreamDeviceType::DEVICE_DEFAULT;

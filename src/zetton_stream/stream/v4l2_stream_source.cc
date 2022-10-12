@@ -4,24 +4,26 @@
 
 #include "zetton_common/log/log.h"
 #include "zetton_common/time/time.h"
+#include "zetton_common/util/perf.h"
 #include "zetton_stream/interface/base_stream_processor.h"
 #include "zetton_stream/stream/stream_options.h"
 #include "zetton_stream/util/v4l2_util.h"
 
 #define __STDC_CONSTANT_MACROS
-#include <assert.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <malloc.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include <cassert>
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
@@ -30,22 +32,25 @@ namespace stream {
 
 V4l2StreamSource::V4l2StreamSource()
     : fd_(-1),
-      buffers_(NULL),
+      buffers_(nullptr),
       n_buffers_(0),
       is_capturing_(false),
       image_seq_(0),
-      device_wait_sec_(2),
-      last_nsec_(0),
-      frame_drop_interval_(0.0) {}
+      avframe_camera_(nullptr),
+      avframe_rgb_(nullptr),
+      avcodec_(nullptr),
+      avoptions_(nullptr),
+      avcodec_context_(nullptr),
+      avframe_camera_size_(0),
+      avframe_rgb_size_(0),
+      video_sws_(nullptr),
+      device_wait_sec_(2) {}
 
-V4l2StreamSource::~V4l2StreamSource() {
-  stop_capturing();
-  uninit_device();
-  close_device();
-}
+V4l2StreamSource::~V4l2StreamSource() { shutdown(); }
 
 bool V4l2StreamSource::Init(const StreamOptions& options) {
   options_ = options;
+  monochrome_ = false;
 
   if (options_.pixel_format == StreamPixelFormat::PIXEL_FORMAT_YUYV) {
     pixel_format_ = V4L2_PIX_FMT_YUYV;
@@ -53,20 +58,22 @@ bool V4l2StreamSource::Init(const StreamOptions& options) {
     pixel_format_ = V4L2_PIX_FMT_UYVY;
   } else if (options_.pixel_format == StreamPixelFormat::PIXEL_FORMAT_MJPEG) {
     pixel_format_ = V4L2_PIX_FMT_MJPEG;
+    init_mjpeg_decoder(options_.width, options_.height);
   } else if (options_.pixel_format ==
              StreamPixelFormat::PIXEL_FORMAT_YUVMONO10) {
+    // actually format V4L2_PIX_FMT_Y16 (10-bit mono expresed as 16-bit pixels),
+    // but we need to use the advertised type (yuyv)
     pixel_format_ = V4L2_PIX_FMT_YUYV;
-    options_.monochrome = true;
+    monochrome_ = true;
   } else if (options_.pixel_format == StreamPixelFormat::PIXEL_FORMAT_RGB) {
     pixel_format_ = V4L2_PIX_FMT_RGB24;
+  } else if (options_.pixel_format == StreamPixelFormat::PIXEL_FORMAT_GRAY8) {
+    pixel_format_ = V4L2_PIX_FMT_GREY;
+    monochrome_ = true;
   } else {
-    pixel_format_ = V4L2_PIX_FMT_YUYV;
     AERROR_F("Unsupported pixel format: {}",
              StreamPixelFormatToStr(options_.pixel_format));
     return false;
-  }
-  if (pixel_format_ == V4L2_PIX_FMT_MJPEG) {
-    init_mjpeg_decoder(options_.width, options_.height);
   }
 
   // Warning when diff with last > 1.5* interval
@@ -82,7 +89,7 @@ int V4l2StreamSource::init_mjpeg_decoder(int image_width, int image_height) {
 
   avcodec_ = avcodec_find_decoder(AV_CODEC_ID_MJPEG);
   if (!avcodec_) {
-    AERROR << "Could not find MJPEG decoder";
+    AERROR_F("Could not find MJPEG decoder");
     return 0;
   }
 
@@ -91,13 +98,11 @@ int V4l2StreamSource::init_mjpeg_decoder(int image_width, int image_height) {
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 0, 0)
   avframe_camera_ = av_frame_alloc();
   avframe_rgb_ = av_frame_alloc();
-
   avpicture_alloc(reinterpret_cast<AVPicture*>(avframe_rgb_), AV_PIX_FMT_RGB24,
                   image_width, image_height);
 #else
   avframe_camera_ = avcodec_alloc_frame();
   avframe_rgb_ = avcodec_alloc_frame();
-
   avpicture_alloc(reinterpret_cast<AVPicture*>(avframe_rgb_), PIX_FMT_RGB24,
                   image_width, image_height);
 #endif
@@ -129,7 +134,7 @@ int V4l2StreamSource::init_mjpeg_decoder(int image_width, int image_height) {
 
   /* open it */
   if (avcodec_open2(avcodec_context_, avcodec_, &avoptions_) < 0) {
-    AERROR << "Could not open MJPEG Decoder";
+    AERROR_F("Could not open MJPEG Decoder");
     return 0;
   }
   return 1;
@@ -137,7 +142,6 @@ int V4l2StreamSource::init_mjpeg_decoder(int image_width, int image_height) {
 
 void V4l2StreamSource::mjpeg2rgb(char* mjpeg_buffer, int len, char* rgb_buffer,
                                  int NumPixels) {
-  (void)NumPixels;
   int got_picture = 0;
 
   memset(rgb_buffer, 0, avframe_rgb_size_);
@@ -153,7 +157,7 @@ void V4l2StreamSource::mjpeg2rgb(char* mjpeg_buffer, int len, char* rgb_buffer,
                                       &got_picture, &avpkt);
 
   if (decoded_len < 0) {
-    AERROR << "Error while decoding frame.";
+    AERROR_F("Error while decoding frame.");
     return;
   }
 #else
@@ -162,7 +166,7 @@ void V4l2StreamSource::mjpeg2rgb(char* mjpeg_buffer, int len, char* rgb_buffer,
 #endif
 
   if (!got_picture) {
-    AERROR << "Camera: expected picture but didn't get it...";
+    AERROR_F("Camera: expected picture but didn't get it...");
     return;
   }
 
@@ -170,8 +174,8 @@ void V4l2StreamSource::mjpeg2rgb(char* mjpeg_buffer, int len, char* rgb_buffer,
   int ysize = avcodec_context_->height;
   int pic_size = avpicture_get_size(avcodec_context_->pix_fmt, xsize, ysize);
   if (pic_size != avframe_camera_size_) {
-    AERROR << "outbuf size mismatch.  pic_size:" << pic_size
-           << ",buffer_size:" << avframe_camera_size_;
+    AERROR_F("outbuf size mismatch. pic_size: {} bufsize: {}", pic_size,
+             avframe_camera_size_);
     return;
   }
 
@@ -199,7 +203,7 @@ void V4l2StreamSource::mjpeg2rgb(char* mjpeg_buffer, int len, char* rgb_buffer,
       reinterpret_cast<uint8_t*>(rgb_buffer), avframe_rgb_size_);
 #endif
   if (size != avframe_rgb_size_) {
-    AERROR << "webcam: avpicture_layout error: " << size;
+    AERROR_F("webcam: avpicture_layout error: {}", size);
     return;
   }
 }
@@ -250,13 +254,13 @@ bool V4l2StreamSource::open_device() {
   struct stat st;
 
   if (-1 == stat(options_.resource.location.c_str(), &st)) {
-    AERROR << "Cannot identify '" << options_.resource.location
-           << "': " << errno << ", " << strerror(errno);
+    AERROR_F("Cannot identify '{}': {}, {}", options_.resource.location, errno,
+             strerror(errno));
     return false;
   }
 
   if (!S_ISCHR(st.st_mode)) {
-    AERROR << options_.resource.location << " is no device";
+    AERROR_F("{} is no device", options_.resource.location);
     return false;
   }
 
@@ -264,8 +268,8 @@ bool V4l2StreamSource::open_device() {
              O_RDWR /* required */ | O_NONBLOCK, 0);
 
   if (-1 == fd_) {
-    AERROR << "Cannot open '" << options_.resource.location << "': " << errno
-           << ", " << strerror(errno);
+    AERROR_F("Cannot open '{}': {}, {}", options_.resource.location, errno,
+             strerror(errno));
     return false;
   }
 
@@ -283,7 +287,7 @@ bool V4l2StreamSource::init_device() {
 
   if (-1 == xioctl(fd_, VIDIOC_QUERYCAP, &cap)) {
     if (EINVAL == errno) {
-      AERROR << options_.resource.location << " is no V4L2 device";
+      AERROR_F("{} is no V4L2 device", options_.resource.location);
       return false;
     }
     AERROR << "VIDIOC_QUERYCAP";
@@ -333,8 +337,13 @@ bool V4l2StreamSource::init_device() {
         case EINVAL:
           /* Cropping not supported. */
           break;
+        default:
+          /* Errors ignored. */
+          break;
       }
     }
+  } else {
+    /* Errors ignored. */
   }
 
   CLEAR(fmt);
@@ -372,20 +381,20 @@ bool V4l2StreamSource::init_device() {
   memset(&stream_params, 0, sizeof(stream_params));
   stream_params.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-  // if (xioctl(fd_, VIDIOC_G_PARM, &stream_params) < 0) {
-  //   // errno_exit("Couldn't query v4l fps!");
-  //   AERROR << "Couldn't query v4l fps!";
-  //   // reconnect();
-  //   return false;
-  // }
+  if (xioctl(fd_, VIDIOC_G_PARM, &stream_params) < 0) {
+    // errno_exit("Couldn't query v4l fps!");
+    AERROR << "Couldn't query v4l fps!";
+    reconnect();
+    return false;
+  }
 
-  AINFO << "Capability flag: 0x" << stream_params.parm.capture.capability;
+  ADEBUG_F("Capability flag: 0x{:x}", stream_params.parm.capture.capability);
 
   stream_params.parm.capture.timeperframe.numerator = 1;
   stream_params.parm.capture.timeperframe.denominator = options_.frame_rate;
 
   if (xioctl(fd_, VIDIOC_S_PARM, &stream_params) < 0) {
-    AINFO << "Couldn't set camera framerate";
+    AWARN_F("Couldn't set camera framerate");
   } else {
     AINFO << "Set framerate to be " << options_.frame_rate;
   }
@@ -411,17 +420,8 @@ bool V4l2StreamSource::init_device() {
   return true;
 }
 
-int V4l2StreamSource::xioctl(int fd, int request, void* arg) {
-  int r = 0;
-  do {
-    r = ioctl(fd, request, arg);
-  } while (-1 == r && EINTR == errno);
-
-  return r;
-}
-
 bool V4l2StreamSource::init_read(unsigned int buffer_size) {
-  buffers_ = reinterpret_cast<buffer*>(calloc(1, sizeof(*buffers_)));
+  buffers_ = reinterpret_cast<CameraBuffer*>(calloc(1, sizeof(*buffers_)));
 
   if (!buffers_) {
     AERROR << "Out of memory";
@@ -445,7 +445,7 @@ bool V4l2StreamSource::init_mmap() {
   struct v4l2_requestbuffers req;
   CLEAR(req);
 
-  req.count = 1;
+  req.count = 4;
   req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   req.memory = V4L2_MEMORY_MMAP;
 
@@ -455,10 +455,18 @@ bool V4l2StreamSource::init_mmap() {
              << " does not support memory mapping";
       return false;
     }
+    AERROR_F("VIDIOC_REQBUFS");
+    reconnect();
     return false;
   }
 
-  buffers_ = reinterpret_cast<buffer*>(calloc(req.count, sizeof(*buffers_)));
+  if (req.count < 2) {
+    AERROR_F("Insufficient buffer memory on {}", options_.resource.location);
+    exit(EXIT_FAILURE);
+  }
+
+  buffers_ =
+      reinterpret_cast<CameraBuffer*>(calloc(req.count, sizeof(*buffers_)));
 
   if (!buffers_) {
     AERROR << "Out of memory";
@@ -479,8 +487,9 @@ bool V4l2StreamSource::init_mmap() {
     }
 
     buffers_[n_buffers_].length = buf.length;
-    buffers_[n_buffers_].start = mmap(NULL, buf.length, PROT_READ | PROT_WRITE,
-                                      MAP_SHARED, fd_, buf.m.offset);
+    buffers_[n_buffers_].start =
+        mmap(nullptr, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd_,
+             buf.m.offset);
 
     if (MAP_FAILED == buffers_[n_buffers_].start) {
       AERROR << "mmap";
@@ -515,7 +524,7 @@ bool V4l2StreamSource::init_userp(unsigned int buffer_size) {
     return false;
   }
 
-  buffers_ = reinterpret_cast<buffer*>(calloc(4, sizeof(*buffers_)));
+  buffers_ = reinterpret_cast<CameraBuffer*>(calloc(4, sizeof(*buffers_)));
 
   if (!buffers_) {
     AERROR << "Out of memory";
@@ -748,15 +757,11 @@ bool V4l2StreamSource::read_frame(CameraImagePtr raw_image) {
           case EAGAIN:
             AINFO << "EAGAIN";
             return false;
-
           case EIO:
-
             /* Could ignore EIO, see spec. */
-
             /* fall through */
-
           default:
-            AERROR << "read";
+            AERROR_F("read");
             return false;
         }
       }
@@ -775,13 +780,9 @@ bool V4l2StreamSource::read_frame(CameraImagePtr raw_image) {
         switch (errno) {
           case EAGAIN:
             return false;
-
           case EIO:
-
             /* Could ignore EIO, see spec. */
-
             /* fall through */
-
           default:
             AERROR << "VIDIOC_DQBUF";
             reconnect();
@@ -794,6 +795,8 @@ bool V4l2StreamSource::read_frame(CameraImagePtr raw_image) {
       raw_image->tv_sec = static_cast<int>(buf.timestamp.tv_sec);
       raw_image->tv_usec = static_cast<int>(buf.timestamp.tv_usec);
 
+#if 0
+      // check the timestamp from buffer
       {
         common::Time image_time(raw_image->tv_sec, 1000 * raw_image->tv_usec);
         uint64_t camera_timestamp = image_time.ToNanosecond();
@@ -822,12 +825,14 @@ bool V4l2StreamSource::read_frame(CameraImagePtr raw_image) {
         double diff = now_s - image_s;
         if (diff > 0.5 || diff < 0) {
           AWARN_F(
-              "camera time diff exception, diff: {:.2f}, now: {:.2f}, image: "
-              "{:.2f}; dev: {}",
+              "camera time diff exception, diff: {:.6f}, now: {:.6f}, image: "
+              "{:.6f}; dev: {}",
               diff, now_s, image_s, options_.resource.location);
         }
       }
-      if (len < raw_image->width * raw_image->height) {
+#endif
+      if (len < raw_image->width * raw_image->height &&
+          pixel_format_ != V4L2_PIX_FMT_MJPEG) {
         AERROR << "Wrong Buffer Len: " << len
                << ", dev: " << options_.resource.location;
       } else {
@@ -851,13 +856,9 @@ bool V4l2StreamSource::read_frame(CameraImagePtr raw_image) {
         switch (errno) {
           case EAGAIN:
             return false;
-
           case EIO:
-
             /* Could ignore EIO, see spec. */
-
             /* fall through */
-
           default:
             AERROR << "VIDIOC_DQBUF";
             return false;
@@ -892,25 +893,42 @@ bool V4l2StreamSource::read_frame(CameraImagePtr raw_image) {
 }
 
 bool V4l2StreamSource::process_image(void* src, int len, CameraImagePtr dest) {
+  // 0. check validiy of image pointers
   if (src == nullptr || dest == nullptr) {
     AERROR << "process image error. src or dest is null";
     return false;
   }
-  if (pixel_format_ == V4L2_PIX_FMT_YUYV ||
-      pixel_format_ == V4L2_PIX_FMT_UYVY) {
-    if (pixel_format_ == V4L2_PIX_FMT_UYVY) {
-      unsigned char yuyvbuf[len];
-      unsigned char uyvybuf[len];
-      memcpy(yuyvbuf, src, len);
-      for (int index = 0; index < len; index = index + 2) {
-        uyvybuf[index] = yuyvbuf[index + 1];
-        uyvybuf[index + 1] = yuyvbuf[index];
+
+  // 1. do conversion
+  if (options_.output_format == StreamPixelFormat::PIXEL_FORMAT_RGB) {
+    // 1.1. convert to RGB
+    if (pixel_format_ == V4L2_PIX_FMT_YUYV) {
+      if (monochrome_) {
+        // 1.1.1. convert Y16 to RGB
+        // actually format V4L2_PIX_FMT_Y16, but xioctl gets
+        // unhappy if you don't use the advertised type (yuyv)
+        mono102mono8((char*)src, dest->image, dest->width * dest->height);
+      } else {
+        // 1.1.2. convert YUYV to RGB
+#if 0
+        yuyv2rgb((char*)src, dest->image, dest->width * dest->height);
+#else
+#ifdef WITH_AVX
+        yuyv2rgb_avx((unsigned char*)src, (unsigned char*)dest->image,
+                     dest->width * dest->height);
+#else
+        convert_yuv_to_rgb_buffer((unsigned char*)src,
+                                  (unsigned char*)dest->image, dest->width,
+                                  dest->height);
+#endif
+#endif
       }
-      memcpy(src, uyvybuf, len);
-    }
-    if (options_.output_format == StreamPixelFormat::PIXEL_FORMAT_YUYV) {
-      memcpy(dest->image, src, dest->width * dest->height * 2);
-    } else if (options_.output_format == StreamPixelFormat::PIXEL_FORMAT_RGB) {
+    } else if (pixel_format_ == V4L2_PIX_FMT_UYVY) {
+// 1.1.3. convert UYUV to RGB
+#if 0
+      uyvy2rgb((char*)src, dest->image, dest->width * dest->height);
+#else
+      uyvy2yuyv((char*)src, len);
 #ifdef WITH_AVX
       yuyv2rgb_avx((unsigned char*)src, (unsigned char*)dest->image,
                    dest->width * dest->height);
@@ -919,15 +937,39 @@ bool V4l2StreamSource::process_image(void* src, int len, CameraImagePtr dest) {
                                 (unsigned char*)dest->image, dest->width,
                                 dest->height);
 #endif
+#endif
+    } else if (pixel_format_ == V4L2_PIX_FMT_MJPEG) {
+      // 1.1.4. convert MJPEG to RGB
+      mjpeg2rgb((char*)src, len, dest->image, dest->width * dest->height);
+    } else if (pixel_format_ == V4L2_PIX_FMT_RGB24) {
+      // 1.1.5. convert RGB to RGB
+      rgb242rgb((char*)src, dest->image, dest->width * dest->height);
+    } else if (pixel_format_ == V4L2_PIX_FMT_GREY) {
+      // 1.1.6. convert GRAY to RGB
+      memcpy(dest->image, (char*)src, dest->width * dest->height);
     } else {
-      AERROR << "unsupported output format:"
-             << StreamPixelFormatToStr(options_.output_format);
+      AERROR << "unsupported pixel format:" << pixel_format_;
+      return false;
+    }
+  } else if (options_.output_format == StreamPixelFormat::PIXEL_FORMAT_YUYV) {
+    // 1.2. convert to YUYV
+    if (pixel_format_ == V4L2_PIX_FMT_YUYV && !monochrome_) {
+      // 1.2.1. convert YUYV to YUYV
+      memcpy(dest->image, src, dest->width * dest->height * 2);
+    } else if (pixel_format_ == V4L2_PIX_FMT_UYVY) {
+      // 1.2.2. convert UYUV to YUYV
+      uyvy2yuyv((char*)src, len);
+      memcpy(dest->image, src, dest->width * dest->height * 2);
+    } else {
+      AERROR << "unsupported pixel format:" << pixel_format_;
       return false;
     }
   } else {
-    AERROR << "unsupported pixel format:" << pixel_format_;
+    AERROR << "unsupported output format:"
+           << StreamPixelFormatToStr(options_.output_format);
     return false;
   }
+
   return true;
 }
 
@@ -1035,6 +1077,22 @@ void V4l2StreamSource::reconnect() {
   stop_capturing();
   uninit_device();
   close_device();
+}
+
+void V4l2StreamSource::shutdown() {
+  stop_capturing();
+  uninit_device();
+  close_device();
+
+  if (avcodec_context_) {
+    avcodec_close(avcodec_context_);
+    av_free(avcodec_context_);
+    avcodec_context_ = nullptr;
+  }
+  if (avframe_camera_) av_free(avframe_camera_);
+  avframe_camera_ = nullptr;
+  if (avframe_rgb_) av_free(avframe_rgb_);
+  avframe_rgb_ = nullptr;
 }
 
 }  // namespace stream

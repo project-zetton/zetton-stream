@@ -1,9 +1,9 @@
 #include <unistd.h>
 
 #include "zetton_common/util/log.h"
-#include "zetton_stream/stream/cv_gst_stream_source.h"
-#include "zetton_stream/stream/stream_options.h"
-#include "zetton_stream/stream/stream_uri.h"
+#include "zetton_stream/base/stream_options.h"
+#include "zetton_stream/base/stream_uri.h"
+#include "zetton_stream/source/cv_gst_stream_source.h"
 
 int main(int argc, char** argv) {
   // prepare stream url

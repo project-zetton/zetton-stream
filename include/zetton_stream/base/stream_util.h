@@ -5,7 +5,7 @@
 #include <string>
 
 #include "zetton_common/util/log.h"
-#include "zetton_stream/stream/stream_options.h"
+#include "zetton_stream/base/stream_options.h"
 
 namespace zetton {
 namespace stream {

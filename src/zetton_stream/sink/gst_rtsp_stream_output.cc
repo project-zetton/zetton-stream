@@ -1,10 +1,10 @@
-#include "zetton_stream/stream/gst_rtsp_stream_output.h"
+#include "zetton_stream/sink/gst_rtsp_stream_output.h"
 
 #include <memory>
 #include <string>
 
-#include "zetton_stream/stream/stream_options.h"
-#include "zetton_stream/stream/stream_util.h"
+#include "zetton_stream/base/stream_options.h"
+#include "zetton_stream/base/stream_util.h"
 
 namespace zetton {
 namespace stream {

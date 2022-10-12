@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include "zetton_stream/stream/stream_uri.h"
+#include "zetton_stream/base/stream_uri.h"
 
 namespace zetton {
 namespace stream {

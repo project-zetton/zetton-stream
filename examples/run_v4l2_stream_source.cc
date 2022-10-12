@@ -3,12 +3,9 @@
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgcodecs.hpp>
 
-#include "zetton_common/time/time.h"
 #include "zetton_common/util/log.h"
 #include "zetton_common/util/perf.h"
-#include "zetton_stream/stream/stream_options.h"
-#include "zetton_stream/stream/stream_uri.h"
-#include "zetton_stream/stream/v4l2_stream_source.h"
+#include "zetton_stream/source/v4l2_stream_source.h"
 
 int main(int argc, char** argv) {
   // prepare stream url

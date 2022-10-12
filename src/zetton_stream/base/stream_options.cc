@@ -1,4 +1,4 @@
-#include "zetton_stream/stream/stream_options.h"
+#include "zetton_stream/base/stream_options.h"
 
 #include <cstring>
 

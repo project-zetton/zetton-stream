@@ -1,12 +1,12 @@
-#include "zetton_stream/stream/v4l2_stream_source.h"
+#include "zetton_stream/source/v4l2_stream_source.h"
 
 #include <linux/videodev2.h>
 
 #include "zetton_common/log/log.h"
 #include "zetton_common/time/time.h"
 #include "zetton_common/util/perf.h"
+#include "zetton_stream/base/stream_options.h"
 #include "zetton_stream/interface/base_stream_processor.h"
-#include "zetton_stream/stream/stream_options.h"
 #include "zetton_stream/util/pixel_format.h"
 #include "zetton_stream/util/v4l2.h"
 

@@ -5,7 +5,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
-#include "zetton_stream/stream/stream_options.h"
+#include "zetton_stream/base/stream_options.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>

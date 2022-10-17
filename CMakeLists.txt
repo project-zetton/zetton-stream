@@ -36,6 +36,9 @@ project(
   VERSION ${extracted_version}
   LANGUAGES CXX)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+                      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+
 # =============#
 # Dependencies #
 # =============#
@@ -46,9 +49,7 @@ project(
 
 find_package(Threads REQUIRED)
 find_package(OpenCV 4 REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GST REQUIRED gstreamer-1.0 gstreamer-app-1.0
-                  gstreamer-rtsp-server-1.0)
+find_package(FFmpeg REQUIRED)
 
 # -----------------#
 # Zetton libraries #
@@ -84,8 +85,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_definitions(-O2)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
-                      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 # simd flags
 include(FindSIMD)
@@ -131,11 +130,11 @@ zetton_cc_library(
   ${src_files}
   INCLUDES
   ${OpenCV_INCLUDE_DIRS}
-  ${GST_INCLUDE_DIRS}
+  ${FFMPEG_INCLUDE_DIR}
   DEPS
   Threads::Threads
   ${OpenCV_LIBS}
-  ${GST_LIBRARIES}
+  ${FFMPEG_LIBRARIES}
   zetton_common::zetton_common)
 
 # ------------------#

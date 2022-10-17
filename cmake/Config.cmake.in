@@ -7,8 +7,6 @@ include(CMakeFindDependencyMacro)
 # Find dependencies
 find_dependency(Threads REQUIRED)
 find_dependency(OpenCV 4 REQUIRED)
-find_dependency(fmt REQUIRED)
-find_dependency(absl REQUIRED)
 find_dependency(zetton_common REQUIRED)
 
 # Our library dependencies (contains definitions for IMPORTED targets)

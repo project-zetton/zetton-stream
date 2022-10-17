@@ -16,11 +16,11 @@ macro(add_simple_excutables dirname)
 endmacro()
 
 macro(add_simple_apps)
-  add_simple_excutables("app")
+  add_simple_excutables("apps")
 endmacro()
 
 macro(add_simple_examples)
-  add_simple_excutables("example")
+  add_simple_excutables("examples")
 endmacro()
 
 # add tests with project library

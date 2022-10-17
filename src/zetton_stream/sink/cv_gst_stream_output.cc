@@ -1,9 +1,9 @@
-#include "zetton_stream/stream/cv_gst_stream_output.h"
+#include "zetton_stream/sink/cv_gst_stream_output.h"
 
 #include <memory>
 #include <string>
 
-#include "zetton_stream/stream/stream_util.h"
+#include "zetton_stream/base/stream_util.h"
 
 namespace zetton {
 namespace stream {

@@ -28,6 +28,10 @@ Recommended environment:
 
 - The python package has not been switched to colcon building system yet
 
+## Acknowledgments
+
+- [v4l-utils](https://git.linuxtv.org/v4l-utils.git) for convience wrappers of V4L2 API
+
 ## License
 
 - For academic use, this project is licensed under the 2-clause BSD License - see the [LICENSE file](LICENSE) for details.

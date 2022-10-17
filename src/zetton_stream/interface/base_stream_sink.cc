@@ -1,11 +1,11 @@
-#include "zetton_stream/interface/base_stream_output.h"
+#include "zetton_stream/interface/base_stream_sink.h"
 
 #include "zetton_common/util/log.h"
 
 namespace zetton {
 namespace stream {
 
-bool BaseStreamOutput::Render(void *image, uint32_t width, uint32_t height) {
+bool BaseStreamSink::Render(void *image, uint32_t width, uint32_t height) {
   const uint32_t num_outputs = outputs_.size();
   bool result = true;
 
@@ -18,7 +18,7 @@ bool BaseStreamOutput::Render(void *image, uint32_t width, uint32_t height) {
   return result;
 }
 
-void BaseStreamOutput::SetStatus(const char *str) {}
+void BaseStreamSink::SetStatus(const char *str) {}
 
 }  // namespace stream
 }  // namespace zetton

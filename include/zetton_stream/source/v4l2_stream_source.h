@@ -2,6 +2,7 @@
 
 #include "zetton_stream/base/frame.h"
 #include "zetton_stream/base/stream_options.h"
+#include "zetton_stream/interface/base_stream_source.h"
 #include "zetton_stream/util/mjpeg_decoder.h"
 #include "zetton_stream/util/v4l/cv4l-helpers.h"
 #include "zetton_stream/util/v4l2.h"
@@ -9,15 +10,18 @@
 namespace zetton {
 namespace stream {
 
-class V4l2StreamSource {
+class V4l2StreamSource : public BaseStreamSource {
  public:
   V4l2StreamSource();
-  ~V4l2StreamSource();
+  ~V4l2StreamSource() override;
 
  public:
-  bool Init(const StreamOptions& options);
+  bool Init(const StreamOptions& options) override;
   bool WaitForDevice();
-  bool Capture(const CameraImagePtr& raw_image);
+  bool Capture(const CameraImagePtr& raw_image) override;
+
+  bool Open() override { return WaitForDevice(); };
+  void Close() override { Shutdown(); };
 
  public:
   bool IsCaptuering();

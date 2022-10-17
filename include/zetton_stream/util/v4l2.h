@@ -9,10 +9,12 @@
 namespace zetton {
 namespace stream {
 
+#if 0
 static void errno_exit(const char* s) {
   AERROR_F("{} error: code {}, string [{}]", s, errno, strerror(errno));
   exit(EXIT_FAILURE);
 }
+#endif
 
 static int xioctl(int fd, int request, void* arg) {
   int r = 0;

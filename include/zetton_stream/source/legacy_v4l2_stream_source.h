@@ -17,19 +17,19 @@
 namespace zetton {
 namespace stream {
 
-class LegacyV4l2StreamSource {
+class LegacyV4l2StreamSource : public BaseStreamSource {
  public:
   LegacyV4l2StreamSource();
-  ~LegacyV4l2StreamSource();
+  ~LegacyV4l2StreamSource() override;
 
  public:
-  bool Init(const StreamOptions& options);
-  bool Open();
-  void Close();
+  bool Init(const StreamOptions& options) override;
+  bool Open() override { return WaitForDevice(); };
+  void Close() override { shutdown(); };
 
  public:
   // user use this function to get camera frame data
-  bool Capture(const CameraImagePtr& raw_image);
+  bool Capture(const CameraImagePtr& raw_image) override;
 
   bool IsCapturing();
   bool WaitForDevice();

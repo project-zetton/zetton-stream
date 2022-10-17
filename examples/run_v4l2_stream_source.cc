@@ -1,36 +1,60 @@
+#include <absl/flags/flag.h>
+#include <absl/flags/parse.h>
 #include <unistd.h>
 
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include "zetton_common/util/log.h"
 #include "zetton_common/util/perf.h"
-#include "zetton_stream/source/cv4l2_stream_source.h"
+#include "zetton_stream/source/legacy_v4l2_stream_source.h"
 #include "zetton_stream/source/v4l2_stream_source.h"
 
+ABSL_FLAG(std::string, device, "/dev/video0", "path to video device");
+ABSL_FLAG(int, width, 320, "image width to capture");
+ABSL_FLAG(int, height, 240, "image height to capture");
+ABSL_FLAG(int, frame_rate, 30, "frame rate to capture");
+ABSL_FLAG(std::string, pixel_format, "YUYV", "pixel format to capture");
+ABSL_FLAG(std::string, output_file, "test.png", "path to captured image file");
+
 int main(int argc, char** argv) {
+  // parse args
+  absl::ParseCommandLine(argc, argv);
+  auto device = absl::GetFlag(FLAGS_device);
+  auto width = absl::GetFlag(FLAGS_width);
+  auto height = absl::GetFlag(FLAGS_height);
+  auto frame_rate = absl::GetFlag(FLAGS_frame_rate);
+  auto pixel_format = absl::GetFlag(FLAGS_pixel_format);
+  auto output_file = absl::GetFlag(FLAGS_output_file);
+
   // prepare stream url
   zetton::stream::StreamOptions options;
-  options.resource = zetton::stream::StreamUri("v4l2:///dev/video0");
+  options.resource =
+      zetton::stream::StreamUri(fmt::format("v4l2://{}", device));
   options.output_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_RGB;
   options.io_method = zetton::stream::StreamIoMethod::IO_METHOD_MMAP;
-#if 0
-  options.pixel_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_YUYV;
-  options.width = 640;
-  options.height = 360;
-  options.frame_rate = 30;
-#else
-  options.pixel_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_MJPEG;
-  options.width = 1280;
-  options.height = 960;
-  options.frame_rate = 30;
-#endif
+  if (pixel_format == "YUYV") {
+    options.pixel_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_YUYV;
+  } else if (pixel_format == "MJPEG") {
+    options.pixel_format =
+        zetton::stream::StreamPixelFormat::PIXEL_FORMAT_MJPEG;
+  } else {
+    AERROR_F("Unsupported pixel format: {}", pixel_format);
+    return -1;
+  }
+  options.width = width;
+  options.height = height;
+  options.frame_rate = frame_rate;
+  // disable auto exposure
+  options.camera.auto_exposure = 1;
 
 // init streamer
 #if 1
-  auto source = std::make_shared<zetton::stream::CV4l2StreamSource>();
-#else
   auto source = std::make_shared<zetton::stream::V4l2StreamSource>();
+#else
+  auto source = std::make_shared<
+      zetton::stream::LegacyV4l2StreamSourceV4l2StreamSource>();
 #endif
   source->Init(options);
 
@@ -73,6 +97,7 @@ int main(int argc, char** argv) {
     // write to file
     cv::Mat image(raw_image->height, raw_image->width, CV_8UC3,
                   raw_image->image);
+    cv::cvtColor(image, image, cv::COLOR_RGB2BGR);
     cv::imwrite("test.jpg", image);
     break;
   }

@@ -1,0 +1,9 @@
+blank_issues_enabled: true
+
+contact_links:
+  - name: 💬 Forum
+    url: https://github.com/project-zetton/zetton-stream/discussions
+    about: Ask general usage questions and discuss with other zetton-stream community members
+  - name: 🌐 Explore Project Zetton
+    url: https://github.com/project-zetton
+    about: Get know more about Project Zetton

@@ -1,5 +1,5 @@
 # add executables with project library
-macro(add_simple_excutable dirname name)
+macro(zetton_cc_excutable dirname name)
   add_executable(${dirname}_${name}
                  ${CMAKE_CURRENT_SOURCE_DIR}/${dirname}/${name}.cc)
   target_link_libraries(${dirname}_${name} ${PROJECT_NAME})
@@ -7,37 +7,91 @@ macro(add_simple_excutable dirname name)
           RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 endmacro()
 
-macro(add_simple_excutables dirname)
+macro(zetton_cc_excutables dirname)
   file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/${dirname}/*.cc")
   foreach(file ${files})
     get_filename_component(name ${file} NAME_WE)
-    add_simple_excutable(${dirname} ${name})
+    zetton_cc_excutable(${dirname} ${name})
   endforeach()
 endmacro()
 
-macro(add_simple_apps)
-  add_simple_excutables("apps")
+macro(zetton_cc_apps)
+  zetton_cc_excutables("app")
 endmacro()
 
-macro(add_simple_examples)
-  add_simple_excutables("examples")
+macro(zetton_cc_examples)
+  zetton_cc_excutables("example")
 endmacro()
 
 # add tests with project library
-macro(add_simple_test dirname name)
+macro(zetton_cc_test dirname name)
   add_executable(${dirname}_${name}
-                 ${CMAKE_CURRENT_SOURCE_DIR}/test/${dirname}/${name}.cc)
-  target_link_libraries(${dirname}_${name} ${PROJECT_NAME} gtest_main)
+                 ${CMAKE_CURRENT_SOURCE_DIR}/tests/${dirname}/${name}.cc)
+  target_link_libraries(${dirname}_${name} ${PROJECT_NAME}
+                        Catch2::Catch2WithMain)
   add_test(NAME ${dirname}_${name} COMMAND ${dirname}_${name})
   # install(TARGETS ${name} DESTINATION bin)
 endmacro()
 
-macro(add_tests_in_dir dirname)
-  file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/test/${dirname}/*.cc")
+macro(zetton_cc_tests dirname)
+  file(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/tests/${dirname}/*.cc")
   foreach(file ${files})
     get_filename_component(name ${file} NAME_WE)
-    add_simple_test(${dirname} ${name})
+    zetton_cc_test(${dirname} ${name})
   endforeach()
+endmacro()
+
+macro(zetton_cc_metadata)
+  # read the package manifest.
+  file(READ "${CMAKE_CURRENT_SOURCE_DIR}/package.xml" package_xml_str)
+
+  # extract project name.
+  if(NOT package_xml_str MATCHES "<name>([A-Za-z0-9_]+)</name>")
+    message(
+      FATAL_ERROR
+        "Could not parse project name from package manifest (aborting)")
+  else()
+    set(extracted_name ${CMAKE_MATCH_1})
+  endif()
+
+  # extract project version.
+  if(NOT package_xml_str MATCHES "<version>([0-9]+.[0-9]+.[0-9]+)</version>")
+    message(
+      FATAL_ERROR
+        "Could not parse project version from package manifest (aborting)")
+  else()
+    # at this point we either have a proper version string, or we've errored out
+    # with a FATAL_ERROR above. So assume CMAKE_MATCH_1 contains our package's
+    # version.
+    set(extracted_version ${CMAKE_MATCH_1})
+  endif()
+endmacro()
+
+macro(zetton_cc_settings)
+  # shared libraries
+  if(NOT DEFINED BUILD_SHARED_LIBS)
+    message(STATUS "${PROJECT_NAME}: Building dynamically-linked binaries")
+    option(BUILD_SHARED_LIBS "Build dynamically-linked binaries" ON)
+    set(BUILD_SHARED_LIBS ON)
+  endif()
+
+  # build type
+  if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+    message(STATUS "${PROJECT_NAME}: Defaulting build type to RelWithDebInfo")
+    set(CMAKE_BUILD_TYPE RelWithDebInfo)
+  endif()
+
+  # win32
+  if(WIN32)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  endif()
+
+  # global compilations
+  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+  add_definitions(-O2)
 endmacro()
 
 # zetton_cc_library()
@@ -199,3 +253,12 @@ function(zetton_cc_library)
     FILE "${PROJECT_BINARY_DIR}/${_NAME}Targets.cmake")
 
 endfunction()
+
+# remove all matching elements from the list
+macro(zetton_list_filterout lst regex)
+  foreach(item ${${lst}})
+    if(item MATCHES "${regex}")
+      list(REMOVE_ITEM ${lst} "${item}")
+    endif()
+  endforeach()
+endmacro()

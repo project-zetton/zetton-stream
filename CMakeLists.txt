@@ -1,43 +1,45 @@
 cmake_minimum_required(VERSION 3.5)
 
 # ##############################################################################
-# Metadata #
+# CMake Project ##
 # ##############################################################################
 
-# Read the package manifest.
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/package.xml" package_xml_str)
+# include useful macros
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/util.cmake)
 
-# Extract project name.
-if(NOT package_xml_str MATCHES "<name>([A-Za-z0-9_]+)</name>")
-  message(
-    FATAL_ERROR "Could not parse project name from package manifest (aborting)")
-else()
-  set(extracted_name ${CMAKE_MATCH_1})
-endif()
+# read metadata from package.xml and setup project
+zetton_cc_metadata()
 
-# Extract project version.
-if(NOT package_xml_str MATCHES "<version>([0-9]+.[0-9]+.[0-9]+)</version>")
-  message(
-    FATAL_ERROR
-      "Could not parse project version from package manifest (aborting)")
-else()
-  # At this point we either have a proper version string, or we've errored out
-  # with a FATAL_ERROR above. So assume CMAKE_MATCH_1 contains our package's
-  # version.
-  set(extracted_version ${CMAKE_MATCH_1})
-endif()
-
-# ##############################################################################
-# CMake Project #
-# ##############################################################################
-
+# set project name and version
 project(
   ${extracted_name}
   VERSION ${extracted_version}
-  LANGUAGES CXX)
+  LANGUAGES C CXX)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
                       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+
+# =========#
+# Settings #
+# =========#
+
+# introduce default building settings
+zetton_cc_settings()
+
+# simd flags
+include(FindSIMD)
+option(WITH_AVX "Compile zetton-stream with AVX intrinsics" ${AVX_FOUND})
+if(WITH_AVX AND AVX_FOUND)
+  set(SIMD_FLAG ${AVX_FLAG})
+  add_definitions(-DWITH_AVX)
+  if(AVX2_FOUND)
+    set(SIMD_FLAG "${SIMD_FLAG} ${AVX2_FLAG}")
+  endif()
+elseif(SSE3_FOUND AND NOT WIN32)
+  set(SIMD_FLAG ${SSE3_FLAG})
+endif()
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SIMD_FLAG}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SIMD_FLAG}")
 
 # =============#
 # Dependencies #
@@ -56,53 +58,6 @@ find_package(FFmpeg REQUIRED)
 # -----------------#
 
 find_package(zetton_common REQUIRED)
-
-# =========#
-# Settings #
-# =========#
-
-# shared libraries
-if(NOT DEFINED BUILD_SHARED_LIBS)
-  message(STATUS "${PROJECT_NAME}: Building dynamically-linked binaries")
-  option(BUILD_SHARED_LIBS "Build dynamically-linked binaries" ON)
-  set(BUILD_SHARED_LIBS ON)
-endif()
-
-# build type
-if(NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
-  message(STATUS "${PROJECT_NAME}: Defaulting build type to RelWithDebInfo")
-  set(CMAKE_BUILD_TYPE RelWithDebInfo)
-endif()
-
-# win32
-if(WIN32)
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-endif()
-
-# global compilations
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-add_definitions(-O2)
-
-# simd flags
-include(FindSIMD)
-option(WITH_AVX "Compile zetton-stream with AVX intrinsics" ${AVX_FOUND})
-if(WITH_AVX AND AVX_FOUND)
-  set(SIMD_FLAG ${AVX_FLAG})
-  add_definitions(-DWITH_AVX)
-  if(AVX2_FOUND)
-    set(SIMD_FLAG "${SIMD_FLAG} ${AVX2_FLAG}")
-  endif()
-elseif(SSE3_FOUND AND NOT WIN32)
-  set(SIMD_FLAG ${SSE3_FLAG})
-endif()
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SIMD_FLAG}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SIMD_FLAG}")
-
-# useful macros
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/util.cmake)
 
 # ##############################################################################
 # Build ##
@@ -140,10 +95,11 @@ zetton_cc_library(
 # ------------------#
 # Executable targets #
 # ------------------#
-add_simple_apps()
-add_simple_examples()
+
+zetton_cc_apps()
+zetton_cc_examples()
 
 # -------------#
 # Test targets #
 # -------------#
-add_tests_in_dir("stream")
+zetton_cc_tests("stream")

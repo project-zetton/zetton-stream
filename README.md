@@ -10,7 +10,7 @@ English | [中文](README_zh-CN.md)
   - [What's New](#whats-new)
   - [Installation](#installation)
   - [Getting Started](#getting-started)
-  - [Overview of Sources and Sinks](#overview-of-sources-and-sinks)
+  - [Overview of Supported Sources and Sinks](#overview-of-supported-sources-and-sinks)
   - [FAQ](#faq)
   - [Contributing](#contributing)
   - [Acknowledgement](#acknowledgement)
@@ -46,19 +46,19 @@ Please refer to [Installation](docs/en/get_started.md) for installation instruct
 
 Please see [get_started.md](docs/en/get_started.md) for the basic usage of zetton-stream.
 
-## Overview of Sources and Sinks
+## Overview of Supported Sources and Sinks
 
-|  Task  | Protocol | Format | Encoding |  CPU  | Intel GPU | NVIDIA GPU | NVIDIA Jetson | Rockchip |
-| :----: | :------: | :----: | :------: | :---: | :-------: | :--------: | :-----------: | :------: |
-| Source |   V4L2   | MJPEG  |   JPEG   |       |           |            |               |          |
-| Source |   V4L2   |  Raw   |    /     |       |           |            |               |          |
-| Source |   RTSP   |   /    |  H.264   |       |           |            |               |          |
-| Source |   RTMP   |   /    |  H.264   |       |           |            |               |          |
-| Source |   RTP    |   /    |  H.264   |       |           |            |               |          |
-|  Sink  |   RTSP   |   /    |  H.264   |       |           |            |               |          |
-|  Sink  |   RTMP   |   /    |  H.264   |       |           |            |               |          |
-|  Sink  |   RTP    |   /    |  H.264   |       |           |            |               |          |
-|  Sink  |    /     |  MP4   |  H.264   |       |           |            |               |          |
+|  Task  | Protocol | Format | Encoding | OpenCV+Gst | GStreamer | FFmpeg |
+| :----: | :------: | :----: | :------: | ---------- | --------- | ------ |
+| Source |   V4L2   | MJPEG  |   JPEG   |            |           |        |
+| Source |   V4L2   |  Raw   |    /     |            |           |        |
+| Source |   RTSP   |   /    |  H.264   |            |           |        |
+| Source |   RTMP   |   /    |  H.264   |            |           |        |
+| Source |   RTP    |   /    |  H.264   |            |           |        |
+|  Sink  |   RTSP   |   /    |  H.264   |            |           |        |
+|  Sink  |   RTMP   |   /    |  H.264   |            |           |        |
+|  Sink  |   RTP    |   /    |  H.264   |            |           |        |
+|  Sink  |    /     |  MP4   |  H.264   |            |           |        |
 
 ## FAQ
 

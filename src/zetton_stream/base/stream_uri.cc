@@ -71,6 +71,7 @@ bool StreamUri::Parse(const char* uri) {
     location = string.substr(pos + 3, std::string::npos);
   } else {
     // check for some formats without specified protocol
+
     pos = string.find("/dev/video");
 
     if (pos == 0) {
@@ -83,6 +84,10 @@ bool StreamUri::Parse(const char* uri) {
       protocol_string = "csi";
     } else if (string == "display") {
       protocol_string = "display";
+    } else if (string == "appsrc") {
+      protocol_string = "appsrc";
+    } else if (string == "appsink") {
+      protocol_string = "appsink";
     } else {
       AERROR_F("Invalid resource or file path:  {}", string);
       return false;
@@ -179,10 +184,10 @@ void StreamUri::Print(const char* prefix) const {
   AINFO_F("{}   - protocol:  {}", prefix, StreamProtocolTypeToStr(protocol));
   AINFO_F("{}   - location:  {}", prefix, location);
   if (extension.size() > 0) {
-    AINFO_F("%s   - extension: {}\n", prefix, extension);
+    AINFO_F("{}   - extension: {}\n", prefix, extension);
   }
   if (port > 0) {
-    AINFO_F("%s   - port:      {}\n", prefix, port);
+    AINFO_F("{}   - port:      {}\n", prefix, port);
   }
 }
 }  // namespace stream

@@ -214,6 +214,7 @@ StreamPlatformType StreamPlatformTypeFromStr(const char* str) {
 StreamOptions::StreamOptions() {
   width = 0;
   height = 0;
+  channels = 3;
   frame_rate = 0;
   bit_rate = 0;
   num_buffers = 4;

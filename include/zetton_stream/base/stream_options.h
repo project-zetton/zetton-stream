@@ -119,6 +119,7 @@ struct StreamOptions {
   StreamUri resource;
   uint32_t width;
   uint32_t height;
+  uint32_t channels;
   float frame_rate;
   uint32_t bit_rate;
   uint32_t num_buffers;

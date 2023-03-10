@@ -48,17 +48,21 @@ zetton-stream 是一个用于深度学习推理的开源软件包。它是 [Proj
 
 ## 支持的数据输入与输出
 
-|  任务  | 协议  | 封装  | 编码  |  CPU  | Intel GPU | NVIDIA GPU | NVIDIA Jetson | Rockchip |
-| :----: | :---: | :---: | :---: | :---: | :-------: | :--------: | :-----------: | :------: |
-| Source | V4L2  | MJPEG | JPEG  |       |           |            |               |          |
-| Source | V4L2  |  Raw  |   /   |       |           |            |               |          |
-| Source | RTSP  |   /   | H.264 |       |           |            |               |          |
-| Source | RTMP  |   /   | H.264 |       |           |            |               |          |
-| Source |  RTP  |   /   | H.264 |       |           |            |               |          |
-|  Sink  | RTSP  |   /   | H.264 |       |           |            |               |          |
-|  Sink  | RTMP  |   /   | H.264 |       |           |            |               |          |
-|  Sink  |  RTP  |   /   | H.264 |       |           |            |               |          |
-|  Sink  |   /   |  MP4  | H.264 |       |           |            |               |          |
+|  Task  | Protocol | Format | Encoding | V4L2 | GStreamer | FFmpeg |
+| :----: | :------: | :----: | :------: | ---- | --------- | ------ |
+| Source |   V4L2   | MJPEG  |   JPEG   | ✅    | ❌         | ❌      |
+| Source |   V4L2   |  Raw   |    /     | ✅    | ❌         | ❌      |
+| Source |   RTSP   |   /    |  H.264   | /    | ✅         | ❌      |
+| Source |   RTMP   |   /    |  H.264   | /    | ❌         | ❌      |
+| Source |   RTP    |   /    |  H.264   | /    | ✅         | ❌      |
+|  Sink  |   RTSP   |   /    |  H.264   | /    | ✅         | ❌      |
+|  Sink  |   RTMP   |   /    |  H.264   | /    | ❌         | ❌      |
+|  Sink  |   RTP    |   /    |  H.264   | /    | ✅         | ❌      |
+|  Sink  |    /     |  MP4   |  H.264   | /    | ❌         | ❌      |
+
+- ✅: 支持且已测试
+- ❓: 支持但未测试
+- ❌: 暂时不支持
 
 ## 常见问题
 

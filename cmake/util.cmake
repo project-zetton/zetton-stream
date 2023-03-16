@@ -16,11 +16,11 @@ macro(zetton_cc_excutables dirname)
 endmacro()
 
 macro(zetton_cc_apps)
-  zetton_cc_excutables("app")
+  zetton_cc_excutables("apps")
 endmacro()
 
 macro(zetton_cc_examples)
-  zetton_cc_excutables("example")
+  zetton_cc_excutables("examples")
 endmacro()
 
 # add tests with project library

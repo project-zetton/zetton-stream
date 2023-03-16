@@ -32,6 +32,10 @@ bool V4l2StreamSource::Init(const StreamOptions& options) {
     monochrome_ = true;
   } else if (options_.pixel_format == StreamPixelFormat::PIXEL_FORMAT_RGB) {
     pixel_format_ = V4L2_PIX_FMT_RGB24;
+  } else if (options_.pixel_format == StreamPixelFormat::PIXEL_FORMAT_BGR) {
+    pixel_format_ = V4L2_PIX_FMT_BGR24;
+  } else if (options_.pixel_format == StreamPixelFormat::PIXEL_FORMAT_NV12) {
+    pixel_format_ = V4L2_PIX_FMT_NV12;
   } else if (options_.pixel_format == StreamPixelFormat::PIXEL_FORMAT_GRAY8) {
     pixel_format_ = V4L2_PIX_FMT_GREY;
     monochrome_ = true;

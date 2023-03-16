@@ -39,6 +39,10 @@ int main(int argc, char** argv) {
   } else if (pixel_format == "MJPEG") {
     options.pixel_format =
         zetton::stream::StreamPixelFormat::PIXEL_FORMAT_MJPEG;
+  } else if (pixel_format == "BGR") {
+    options.pixel_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_BGR;
+  } else if (pixel_format == "NV12") {
+    options.pixel_format = zetton::stream::StreamPixelFormat::PIXEL_FORMAT_NV12;
   } else {
     AERROR_F("Unsupported pixel format: {}", pixel_format);
     return -1;

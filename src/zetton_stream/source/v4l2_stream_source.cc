@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 
 #include "zetton_stream/util/pixel_format.h"
+#include "zetton_stream/util/v4l/v4l2-info.h"
 
 namespace zetton {
 namespace stream {
@@ -227,7 +228,7 @@ bool V4l2StreamSource::InitDevice() {
   options_.width = fmt.g_width();
   options_.height = fmt.g_height();
   AINFO_F("image size set to {}x{} and pixel format set to {} for device {}",
-          options_.width, options_.height, pixel_format_,
+          options_.width, options_.height, pixfmt2s(pixel_format_),
           options_.resource.location);
   // 2.2. set frame rate
   v4l2_fract frame_rate;
@@ -508,7 +509,7 @@ bool V4l2StreamSource::ProcessImage(
         // 1.1.8. convert GRAY to RGB
         memcpy(dest->image, (char*)src, dest->width * dest->height);
       } else {
-        AERROR << "unsupported pixel format:" << pixel_format_;
+        AERROR_F("Unsupported pixel format: {}", pixfmt2s(pixel_format_));
         return false;
       }
     } else if (options_.output_format == StreamPixelFormat::PIXEL_FORMAT_YUYV) {
@@ -521,7 +522,7 @@ bool V4l2StreamSource::ProcessImage(
         uyvy2yuyv((char*)src, len);
         memcpy(dest->image, src, dest->width * dest->height * 2);
       } else {
-        AERROR << "unsupported pixel format:" << pixel_format_;
+        AERROR_F("Unsupported pixel format: {}", pixfmt2s(pixel_format_));
         return false;
       }
     } else {

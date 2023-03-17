@@ -194,8 +194,18 @@ void yuyv2rgb(char* YUV, char* RGB, int NumPixels) {
   }
 }
 
-void rgb242rgb(char* YUV, char* RGB, int NumPixels) {
-  memcpy(RGB, YUV, NumPixels * 3);
+void rgb242rgb(char* RGB24, char* RGB, int NumPixels) {
+  memcpy(RGB, RGB24, NumPixels * 3);
+}
+
+void bgr242rgb(char* BGR24, char* RGB, int NumPixels) {
+  // BGR -> RGB
+  int i, j;
+  for (i = 0, j = 0; i < (NumPixels * 3); i += 3, j += 3) {
+    RGB[j + 0] = BGR24[i + 2];
+    RGB[j + 1] = BGR24[i + 1];
+    RGB[j + 2] = BGR24[i + 0];
+  }
 }
 
 int convert_yuv_to_rgb_pixel(int y, int u, int v) {

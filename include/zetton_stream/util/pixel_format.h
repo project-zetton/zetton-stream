@@ -15,7 +15,8 @@ void uyvy2yuyv(char *src, int len);
 void uyvy2rgb(char *YUV, char *RGB, int NumPixels);
 void mono102mono8(char *RAW, char *MONO, int NumPixels);
 void yuyv2rgb(char *YUV, char *RGB, int NumPixels);
-void rgb242rgb(char *YUV, char *RGB, int NumPixels);
+void rgb242rgb(char *RGB24, char *RGB, int NumPixels);
+void bgr242rgb(char *BGR24, char *RGB, int NumPixels);
 
 int convert_yuv_to_rgb_pixel(int y, int u, int v);
 int convert_yuv_to_rgb_buffer(unsigned char *yuv, unsigned char *rgb,

@@ -487,8 +487,25 @@ bool V4l2StreamSource::ProcessImage(
       } else if (pixel_format_ == V4L2_PIX_FMT_RGB24) {
         // 1.1.5. convert RGB to RGB
         rgb242rgb((char*)src, dest->image, dest->width * dest->height);
+      } else if (pixel_format_ == V4L2_PIX_FMT_BGR24) {
+        // 1.1.6. convert BGR to RGB
+        bgr242rgb((char*)src, dest->image, dest->width * dest->height);
+      } else if (pixel_format_ == V4L2_PIX_FMT_NV12) {
+        // 1.1.7. convert NV12 to RGB
+#if 0
+        yuyv2rgb((char*)src, dest->image, dest->width * dest->height);
+#else
+#ifdef WITH_AVX
+        yuyv2rgb_avx((unsigned char*)src, (unsigned char*)dest->image,
+                     dest->width * dest->height);
+#else
+        convert_yuv_to_rgb_buffer((unsigned char*)src,
+                                  (unsigned char*)dest->image, dest->width,
+                                  dest->height);
+#endif
+#endif
       } else if (pixel_format_ == V4L2_PIX_FMT_GREY) {
-        // 1.1.6. convert GRAY to RGB
+        // 1.1.8. convert GRAY to RGB
         memcpy(dest->image, (char*)src, dest->width * dest->height);
       } else {
         AERROR << "unsupported pixel format:" << pixel_format_;
